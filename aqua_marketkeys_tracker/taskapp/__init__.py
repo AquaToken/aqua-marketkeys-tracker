@@ -1,9 +1,9 @@
 import os
-from datetime import timedelta
 
 from django.conf import settings
 
 from celery import Celery
+from celery.schedules import crontab
 
 
 if not settings.configured:
@@ -21,10 +21,11 @@ def setup_periodic_tasks(sender, **kwargs):
     from drf_secure_token.tasks import DELETE_OLD_TOKENS
 
     app.conf.beat_schedule.update({
-        'aqua_marketkeys_tracker.testapp.tasks.test_task': {
-            'task': 'aqua_marketkeys_tracker.testapp.tasks.test_task',
-            'run_every': timedelta(seconds=10),
+        'drf_secure_token.tasks.delete_old_tokens': DELETE_OLD_TOKENS,
+
+        'aqua_marketkeys_tracker.marketkeys.tasks.task_update_market_keys': {
+            'task': 'aqua_marketkeys_tracker.marketkeys.tasks.task_update_market_keys',
+            'schedule': crontab(minute='*/5'),
             'args': (),
         },
-        'drf_secure_token.tasks.delete_old_tokens': DELETE_OLD_TOKENS,
     })

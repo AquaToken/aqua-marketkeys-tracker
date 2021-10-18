@@ -1,0 +1,2 @@
+class MarketKeyParsingError(Exception):
+    pass

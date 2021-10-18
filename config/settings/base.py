@@ -16,7 +16,7 @@ BASE_DIR = root()
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
 
-AUTH_USER_MODEL = 'custom_auth.ApplicationUser'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Application definition
@@ -34,11 +34,11 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    'drf_secure_token',
 ]
 
 LOCAL_APPS = [
     'aqua_marketkeys_tracker.taskapp',
+    'aqua_marketkeys_tracker.marketkeys',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -74,7 +74,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'aqua_marketkeys_tracker.context_processors.google_analytics',
             ],
             'loaders': [
                 'django.template.loaders.filesystem.Loader',
@@ -180,10 +179,22 @@ MAILING_USE_CELERY = True
 REST_FRAMEWORK = {
     'PAGE_SIZE': 30,
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'drf_secure_token.authentication.SecureTokenAuthentication',
-    ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
 }
+
+
+# Horizon configuration
+# --------------------------------------------------------------------------
+
+STELLAR_PASSPHRASE = NotImplemented
+HORIZON_URL = NotImplemented
+
+
+# Market key configuration
+# --------------------------------------------------------------------------
+
+MARKET_KEY_THRESHOLD = 10
+MARKET_KEY_SIGNER_WEIGHT = 1
+MARKET_KEY_MARKER = NotImplemented

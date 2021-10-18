@@ -62,3 +62,16 @@ if CELERY_ENABLED:
 # -------------
 
 SENTRY_ENABLED = False
+
+
+# Horizon configuration
+# --------------------------------------------------------------------------
+
+STELLAR_PASSPHRASE = 'Test SDF Network ; September 2015'
+HORIZON_URL = 'https://horizon-testnet.stellar.org'
+
+
+# Market key configuration
+# --------------------------------------------------------------------------
+
+MARKET_KEY_MARKER = 'GAY4KLIO4EC63PVZRWK7P2D5OTQ3W6GMYDO6MPMOX46VZ74KMKCQKWBW'
