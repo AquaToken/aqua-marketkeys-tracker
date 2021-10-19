@@ -45,31 +45,6 @@ USE_CLOUDFRONT = env.bool('USE_CLOUDFRONT')
 USE_HTTPS = env.bool('USE_HTTPS')
 
 
-# Storage configurations
-# --------------------------------------------------------------------------
-
-AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
-AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
-AWS_AUTO_CREATE_BUCKET = True
-
-
-AWS_QUERYSTRING_AUTH = False
-AWS_S3_SECURE_URLS = USE_HTTPS
-
-
-if USE_CLOUDFRONT:
-    AWS_S3_CUSTOM_DOMAIN = env('AWS_S3_CUSTOM_DOMAIN')
-else:
-    AWS_S3_CUSTOM_DOMAIN = '{0}.s3.amazonaws.com'.format(AWS_STORAGE_BUCKET_NAME)
-
-STATIC_URL = 'http{0}://{1}/static/'.format('s' if USE_HTTPS else '', AWS_S3_CUSTOM_DOMAIN)
-MEDIA_URL = 'http{0}://{1}/media/'.format('s' if USE_HTTPS else '', AWS_S3_CUSTOM_DOMAIN)
-
-DEFAULT_FILE_STORAGE = 'config.settings.s3utils.MediaRootS3BotoStorage'
-STATICFILES_STORAGE = 'config.settings.s3utils.StaticRootS3BotoStorage'
-
-
 # Email settings
 # --------------------------------------------------------------------------
 
