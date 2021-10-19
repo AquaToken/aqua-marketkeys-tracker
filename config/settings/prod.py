@@ -38,13 +38,6 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
 ]
 
 
-# --------------------------------------------------------------------------
-
-USE_COMPRESSOR = env.bool('USE_COMPRESSOR')
-USE_CLOUDFRONT = env.bool('USE_CLOUDFRONT')
-USE_HTTPS = env.bool('USE_HTTPS')
-
-
 # Email settings
 # --------------------------------------------------------------------------
 
