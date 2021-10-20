@@ -159,19 +159,6 @@ if CELERY_ENABLED:
     CELERY_TASK_IGNORE_RESULT = True
 
 
-# Django mailing configuration
-# --------------------------------------------------------------------------
-
-if CELERY_ENABLED:
-    TEMPLATED_EMAIL_BACKEND = 'aqua_marketkeys_tracker.mailing.backends.AsyncTemplateBackend'
-    MAILING_USE_CELERY = True
-
-TEMPLATED_EMAIL_TEMPLATE_DIR = 'email'
-TEMPLATED_EMAIL_FILE_EXTENSION = 'html'
-
-MAILING_USE_CELERY = True
-
-
 # Rest framework configuration
 # http://www.django-rest-framework.org/api-guide/settings/
 # --------------------------------------------------------------------------
