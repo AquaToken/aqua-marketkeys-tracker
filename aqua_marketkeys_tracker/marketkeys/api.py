@@ -58,3 +58,8 @@ class SearchMarketKeyView(ListModelMixin, BaseMarketKeyView):
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class TempMarketKeyView(ListModelMixin, BaseMarketKeyView):
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
