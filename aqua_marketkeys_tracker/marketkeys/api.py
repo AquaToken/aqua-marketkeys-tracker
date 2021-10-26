@@ -8,11 +8,11 @@ from rest_framework.permissions import AllowAny
 
 from stellar_sdk import Asset
 
-from aqua_marketkeys_tracker.marketkeys.filters import MultiGetFilterBackend
 from aqua_marketkeys_tracker.marketkeys.models import MarketKey
 from aqua_marketkeys_tracker.marketkeys.pagination import MarketKeyCursorPagination
 from aqua_marketkeys_tracker.marketkeys.pair import MarketPair
 from aqua_marketkeys_tracker.marketkeys.serializers import MarketKeySerializer
+from aqua_marketkeys_tracker.utils.drf.filters import MultiGetFilterBackend
 from aqua_marketkeys_tracker.utils.stellar.urls import AssetStringConverter
 
 
