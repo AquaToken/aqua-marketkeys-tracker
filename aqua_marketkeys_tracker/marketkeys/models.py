@@ -1,4 +1,5 @@
 from django.db import models
+
 from stellar_sdk import Asset
 
 from aqua_marketkeys_tracker.marketkeys.pair import MarketPair
@@ -15,14 +16,12 @@ class MarketKeyQuerySet(models.QuerySet):
                 asset1_issuer=market_pair.asset1.issuer or '',
                 asset2_code=market_pair.asset2.code,
                 asset2_issuer=market_pair.asset2.issuer or '',
-            )
-            |
-            models.Q(
+            ) | models.Q(
                 asset1_code=market_pair.asset2.code,
                 asset1_issuer=market_pair.asset2.issuer or '',
                 asset2_code=market_pair.asset1.code,
                 asset2_issuer=market_pair.asset1.issuer or '',
-            )
+            ),
         )
 
     def filter_for_asset(self, asset: Asset):
@@ -30,12 +29,10 @@ class MarketKeyQuerySet(models.QuerySet):
             models.Q(
                 asset1_code=asset.code,
                 asset1_issuer=asset.issuer or '',
-            )
-            |
-            models.Q(
+            ) | models.Q(
                 asset2_code=asset.code,
                 asset2_issuer=asset.issuer or '',
-            )
+            ),
         )
 
 

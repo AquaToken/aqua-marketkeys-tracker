@@ -1,5 +1,6 @@
-from dateutil.parser import parse as date_parse
 from django.conf import settings
+
+from dateutil.parser import parse as date_parse
 from stellar_sdk import Asset
 
 from aqua_marketkeys_tracker.marketkeys.exceptions import MarketKeyParsingError
@@ -18,8 +19,8 @@ def verify_signers(account_info):
     if not all(s['weight'] == settings.MARKET_KEY_SIGNER_WEIGHT for s in signers):
         raise MarketKeyParsingError('Invalid signer weight.')
 
-    if not (thresholds['low_threshold'] == thresholds['med_threshold'] ==
-            thresholds['high_threshold'] == settings.MARKET_KEY_THRESHOLD):
+    if not (thresholds['low_threshold'] == thresholds['med_threshold']
+            == thresholds['high_threshold'] == settings.MARKET_KEY_THRESHOLD):
         raise MarketKeyParsingError('Invalid thresholds.')
 
 

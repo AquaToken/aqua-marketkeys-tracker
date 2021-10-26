@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.conf.urls.static import static
-# from django.contrib import admin
 from django.urls import include, path, register_converter
 
 from aqua_marketkeys_tracker.utils.stellar.urls import AssetStringConverter
@@ -11,7 +10,6 @@ register_converter(AssetStringConverter, 'asset_string')
 
 urlpatterns = [
     path('api/', include('aqua_marketkeys_tracker.marketkeys.urls')),
-    # path('open/cms/', admin.site.urls),
 ]
 
 

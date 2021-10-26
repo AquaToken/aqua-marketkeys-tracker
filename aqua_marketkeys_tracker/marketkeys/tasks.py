@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Optional, List
+from typing import List, Optional
 
 from django.conf import settings
 
@@ -11,6 +11,7 @@ from aqua_marketkeys_tracker.marketkeys.models import MarketKey
 from aqua_marketkeys_tracker.marketkeys.parser import parse_account_info
 from aqua_marketkeys_tracker.taskapp import app as celery_app
 from aqua_marketkeys_tracker.utils.stellar.requests import load_all_records
+
 
 logger = logging.getLogger()
 
@@ -46,9 +47,7 @@ def _activate_market_keys(market_keys: List[MarketKey]):
 def task_update_market_keys():
     horizon_server = Server(settings.HORIZON_URL)
 
-    request_builder = horizon_server.accounts() \
-        .for_signer(settings.MARKET_KEY_MARKER) \
-        .order(desc=False)
+    request_builder = horizon_server.accounts().for_signer(settings.MARKET_KEY_MARKER).order(desc=False)
 
     new_market_key_list = []
     for account_info in load_all_records(request_builder, page_size=MARKET_KEYS_PAGE_LIMIT):

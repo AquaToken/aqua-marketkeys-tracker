@@ -1,12 +1,16 @@
 from typing import Optional
 
 from django.shortcuts import get_object_or_404
+
 from rest_framework.generics import GenericAPIView
-from rest_framework.mixins import RetrieveModelMixin, ListModelMixin
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import AllowAny
+
 from stellar_sdk import Asset
 
+from aqua_marketkeys_tracker.marketkeys.filters import MultiGetFilterBackend
 from aqua_marketkeys_tracker.marketkeys.models import MarketKey
+from aqua_marketkeys_tracker.marketkeys.pagination import MarketKeyCursorPagination
 from aqua_marketkeys_tracker.marketkeys.pair import MarketPair
 from aqua_marketkeys_tracker.marketkeys.serializers import MarketKeySerializer
 from aqua_marketkeys_tracker.utils.stellar.urls import AssetStringConverter
@@ -16,6 +20,7 @@ class BaseMarketKeyView(GenericAPIView):
     queryset = MarketKey.objects.filter_active()
     serializer_class = MarketKeySerializer
     permission_classes = (AllowAny, )
+    pagination_class = MarketKeyCursorPagination
 
 
 class RetrieveMarketKeyView(RetrieveModelMixin, BaseMarketKeyView):
@@ -38,6 +43,7 @@ class RetrieveMarketKeyView(RetrieveModelMixin, BaseMarketKeyView):
         return self.retrieve(request, *args, **kwargs)
 
 
+# TODO: Move this view to filter backend?
 class SearchMarketKeyView(ListModelMixin, BaseMarketKeyView):
     SEARCH_PARAM_NAME = 'asset'
 
@@ -60,6 +66,9 @@ class SearchMarketKeyView(ListModelMixin, BaseMarketKeyView):
         return self.list(request, *args, **kwargs)
 
 
-class TempMarketKeyView(ListModelMixin, BaseMarketKeyView):
+class ListMarketKeyView(ListModelMixin, BaseMarketKeyView):
+    filter_backends = [MultiGetFilterBackend]
+    multiget_filter_fields = ['account_id']
+
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

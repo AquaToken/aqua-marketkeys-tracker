@@ -15,8 +15,10 @@ class MarketPair:
         self.asset2 = asset2
 
     def __eq__(self, other):
-        return (self.asset1 == other.asset1 and self.asset2 == other.asset2) or \
-               (self.asset1 == other.asset2 and self.asset2 == other.asset1)
+        return (
+            (self.asset1 == other.asset1 and self.asset2 == other.asset2)
+            or (self.asset1 == other.asset2 and self.asset2 == other.asset1)
+        )
 
     def __hash__(self):
         asset1_string = get_asset_string(self.asset1)
