@@ -2,7 +2,7 @@ from rest_framework.pagination import CursorPagination
 
 
 class MarketKeyCursorPagination(CursorPagination):
-    ordering = '-locked_at'
+    ordering = 'locked_at'
     page_size = 10
     page_size_query_param = 'limit'
     max_page_size = 200
