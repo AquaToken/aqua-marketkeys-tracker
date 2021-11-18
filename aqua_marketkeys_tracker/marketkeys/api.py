@@ -1,5 +1,6 @@
 from typing import Optional
 
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 
 from rest_framework.generics import GenericAPIView
@@ -28,11 +29,12 @@ class RetrieveMarketKeyView(RetrieveModelMixin, BaseMarketKeyView):
         asset1 = self.kwargs['asset1']
         asset2 = self.kwargs['asset2']
 
-        queryset = self.filter_queryset(self.get_queryset())
+        try:
+            market_pair = MarketPair(asset1, asset2)
+        except ValueError as exc:
+            raise Http404(str(exc))
 
-        queryset = queryset.filter_for_market_pair(MarketPair(asset1, asset2))
-
-        obj = get_object_or_404(queryset)
+        obj = get_object_or_404(self.filter_queryset(self.get_queryset()).filter_for_market_pair(market_pair))
 
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
