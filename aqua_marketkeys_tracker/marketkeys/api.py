@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny
 from stellar_sdk import Asset
 
 from aqua_marketkeys_tracker.marketkeys.models import MarketKey
-from aqua_marketkeys_tracker.marketkeys.pagination import MarketKeyCursorPagination
+from aqua_marketkeys_tracker.marketkeys.pagination import MarketKeyPagination
 from aqua_marketkeys_tracker.marketkeys.pair import MarketPair
 from aqua_marketkeys_tracker.marketkeys.serializers import MarketKeySerializer
 from aqua_marketkeys_tracker.utils.drf.filters import MultiGetFilterBackend
@@ -21,7 +21,7 @@ class BaseMarketKeyView(GenericAPIView):
     queryset = MarketKey.objects.filter_active()
     serializer_class = MarketKeySerializer
     permission_classes = (AllowAny, )
-    pagination_class = MarketKeyCursorPagination
+    pagination_class = MarketKeyPagination
 
 
 class RetrieveMarketKeyView(RetrieveModelMixin, BaseMarketKeyView):
