@@ -7,13 +7,13 @@ from aqua_marketkeys_tracker.marketkeys.exceptions import MarketKeyParsingError
 from aqua_marketkeys_tracker.marketkeys.models import MarketKey
 
 
-def verify_signers(account_info):
+def verify_signers(account_info: dict, marker: str):
     signers = account_info['signers']
     thresholds = account_info['thresholds']
     if len(signers) != 2:
         raise MarketKeyParsingError('Invalid signers count.')
 
-    if not any(s['key'] == settings.MARKET_KEY_MARKER for s in signers):
+    if not any(s['key'] == marker for s in signers):
         raise MarketKeyParsingError('Market key not found.')
 
     if not all(s['weight'] == settings.MARKET_KEY_SIGNER_WEIGHT for s in signers):
@@ -42,8 +42,8 @@ def parse_market_assets(account_info: dict) -> (Asset, Asset):
     return asset1, asset2
 
 
-def parse_account_info(account_info: dict) -> MarketKey:
-    verify_signers(account_info)
+def parse_account_info(account_info: dict, marker: str) -> MarketKey:
+    verify_signers(account_info, marker)
 
     account_id = account_info['account_id']
     last_modified_time = account_info['last_modified_time']

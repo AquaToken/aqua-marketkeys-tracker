@@ -38,6 +38,7 @@ class MarketKeyQuerySet(models.QuerySet):
 
 class MarketKey(models.Model):
     account_id = models.CharField(max_length=56, unique=True)
+    downvote_account_id = models.CharField(max_length=56, unique=True, null=True)
 
     asset1_code = models.CharField(max_length=12)
     asset1_issuer = models.CharField(max_length=56)

@@ -92,4 +92,5 @@ HORIZON_URL = 'https://horizon.stellar.org'
 # Market key configuration
 # --------------------------------------------------------------------------
 
-MARKET_KEY_MARKER = env('MARKET_KEY_MARKER')
+UPVOTE_MARKET_KEY_MARKER = env('UPVOTE_MARKET_KEY_MARKER')
+DOWNVOTE_MARKET_KEY_MARKER = env('DOWNVOTE_MARKET_KEY_MARKER')
