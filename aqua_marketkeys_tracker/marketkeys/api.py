@@ -70,7 +70,7 @@ class SearchMarketKeyView(ListModelMixin, BaseMarketKeyView):
 
 class ListMarketKeyView(ListModelMixin, BaseMarketKeyView):
     filter_backends = [MultiGetFilterBackend]
-    multiget_filter_fields = ['account_id']
+    multiget_filter_fields = ['account_id', 'downvote_account_id']
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
