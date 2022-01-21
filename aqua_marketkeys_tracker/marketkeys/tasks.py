@@ -4,12 +4,14 @@ from typing import List, Optional
 
 from django.conf import settings
 
+import requests
 from stellar_sdk import Server
 
 from aqua_marketkeys_tracker.marketkeys.exceptions import MarketKeyParsingError
 from aqua_marketkeys_tracker.marketkeys.models import MarketKey
 from aqua_marketkeys_tracker.marketkeys.parser import parse_account_info
 from aqua_marketkeys_tracker.taskapp import app as celery_app
+from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string, parse_asset_string
 from aqua_marketkeys_tracker.utils.stellar.requests import load_all_records
 
 
@@ -17,6 +19,9 @@ logger = logging.getLogger()
 
 
 MARKET_KEYS_PAGE_LIMIT = 200
+
+ASSETS_ENDPOINT = '/api/v1/assets/'
+ASSETS_CHUNK_SIZE = 100
 
 
 def _parse_market_key(account_info: dict) -> Optional[MarketKey]:
@@ -89,3 +94,30 @@ def task_update_downvote_market_keys():
 
         market_key.downvote_account_id = downvote_market_key.account_id
         market_key.save()
+
+
+@celery_app.task(ignore_result=True)
+def task_update_auth_required():
+    assets = set()
+    for market_key in MarketKey.objects.filter_active().exclude(is_auth_required=True):
+        assets.add(get_asset_string(market_key.get_asset1()))
+        assets.add(get_asset_string(market_key.get_asset2()))
+
+    assets = list(assets)
+    i = 0
+    while True:
+        chunk = assets[i * ASSETS_CHUNK_SIZE:(i + 1) * ASSETS_CHUNK_SIZE]
+
+        response = requests.get(f'{settings.ASSETS_TRACKER_URL.rstrip("/")}{ASSETS_ENDPOINT}', params=[
+            ('asset', asset_string) for asset_string in chunk
+        ])
+        response.raise_for_status()
+        data = response.json()['results']
+
+        is_required_assets = [asset for asset in data if asset['auth_required']]
+        for asset in is_required_assets:
+            MarketKey.objects.filter_for_asset(parse_asset_string(asset['asset_string'])).update(is_auth_required=True)
+
+        i += 1
+        if len(chunk) < ASSETS_CHUNK_SIZE:
+            break
