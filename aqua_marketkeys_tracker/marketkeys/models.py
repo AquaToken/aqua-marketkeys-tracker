@@ -50,6 +50,7 @@ class MarketKey(models.Model):
     locked_at = models.DateTimeField()
 
     is_active = models.BooleanField(default=False)
+    is_auth_required = models.BooleanField(default=False)
 
     objects = MarketKeyQuerySet.as_manager()
 

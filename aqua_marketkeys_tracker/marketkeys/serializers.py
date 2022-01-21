@@ -16,6 +16,7 @@ class MarketKeySerializer(serializers.ModelSerializer):
                   'upvote_account_id', 'downvote_account_id',
                   'asset1', 'asset1_code', 'asset1_issuer',
                   'asset2', 'asset2_code', 'asset2_issuer',
+                  'is_auth_required',
                   'created_at', 'locked_at']
 
     def get_asset1(self, obj):
