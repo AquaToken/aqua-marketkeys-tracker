@@ -69,9 +69,16 @@ class SearchMarketKeyView(ListModelMixin, BaseMarketKeyView):
 
 
 class ListMarketKeyView(ListModelMixin, BaseMarketKeyView):
-    queryset = BaseMarketKeyView.queryset.exclude(downvote_account_id__isnull=True).exclude(is_auth_required=True)
     filter_backends = [MultiGetFilterBackend]
     multiget_filter_fields = ['account_id', 'downvote_account_id']
+
+    def get_queryset(self):
+        queryset = super(ListMarketKeyView, self).get_queryset()
+
+        if all(field not in self.request.query_params for field in self.multiget_filter_fields):
+            queryset = queryset.exclude(downvote_account_id__isnull=True).exclude(is_auth_required=True)
+
+        return queryset
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
