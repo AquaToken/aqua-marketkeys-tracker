@@ -29,4 +29,9 @@ def setup_periodic_tasks(sender, **kwargs):
             'schedule': crontab(minute='1-59/5'),  # 5n+1
             'args': (),
         },
+        'aqua_marketkeys_tracker.marketkeys.tasks.task_update_auth_required': {
+            'task': 'aqua_marketkeys_tracker.marketkeys.tasks.task_update_auth_required',
+            'schedule': crontab(minute='2-59/5'),  # 5n+2
+            'args': (),
+        },
     })
