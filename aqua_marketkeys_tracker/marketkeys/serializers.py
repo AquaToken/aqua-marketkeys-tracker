@@ -10,6 +10,11 @@ class MarketKeySerializer(serializers.ModelSerializer):
     asset1 = serializers.SerializerMethodField()
     asset2 = serializers.SerializerMethodField()
 
+    asset1_code = serializers.CharField(source='asset1.code')
+    asset1_issuer = serializers.CharField(source='asset1.issuer')
+    asset2_code = serializers.CharField(source='asset2.code')
+    asset2_issuer = serializers.CharField(source='asset2.issuer')
+
     class Meta:
         model = MarketKey
         fields = ['id', 'account_id',
@@ -20,7 +25,7 @@ class MarketKeySerializer(serializers.ModelSerializer):
                   'created_at', 'locked_at']
 
     def get_asset1(self, obj):
-        return get_asset_string(obj.get_asset1())
+        return get_asset_string(obj.asset1.get_stellar_asset())
 
     def get_asset2(self, obj):
-        return get_asset_string(obj.get_asset2())
+        return get_asset_string(obj.asset2.get_stellar_asset())

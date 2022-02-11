@@ -69,8 +69,8 @@ def task_update_downvote_market_keys():
 def task_update_auth_required():
     assets = set()
     for market_key in MarketKey.objects.filter_active().exclude(is_auth_required=True):
-        assets.add(get_asset_string(market_key.get_asset1()))
-        assets.add(get_asset_string(market_key.get_asset2()))
+        assets.add(get_asset_string(market_key.asset1.get_stellar_asset()))
+        assets.add(get_asset_string(market_key.asset2.get_stellar_asset()))
 
     assets = list(assets)
     i = 0

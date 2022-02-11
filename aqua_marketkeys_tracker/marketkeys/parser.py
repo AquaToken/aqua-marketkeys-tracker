@@ -53,12 +53,13 @@ def parse_account_info(account_info: dict, marker: str) -> MarketKey:
     last_modified_time = account_info['last_modified_time']
     asset1, asset2 = parse_market_assets(account_info)
 
+    asset1 = Asset(code=asset1.code, issuer=asset1.issuer or '')
+    asset2 = Asset(code=asset2.code, issuer=asset2.issuer or '')
+
     return MarketKey(
         account_id=account_id,
-        asset1_code=asset1.code,
-        asset1_issuer=asset1.issuer or '',
-        asset2_code=asset2.code,
-        asset2_issuer=asset2.issuer or '',
+        asset1=asset1,
+        asset2=asset2,
         locked_at=date_parse(last_modified_time),
     )
 
@@ -133,9 +134,5 @@ class MarketKeyParser:
             account_id=account_id,
             asset1=asset1,
             asset2=asset2,
-            asset1_code=asset1.code,
-            asset1_issuer=asset1.issuer,
-            asset2_code=asset2.code,
-            asset2_issuer=asset2.issuer,
             locked_at=date_parse(last_modified_time),
         )

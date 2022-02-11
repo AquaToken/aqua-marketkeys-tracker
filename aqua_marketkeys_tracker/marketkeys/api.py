@@ -18,7 +18,7 @@ from aqua_marketkeys_tracker.utils.stellar.urls import AssetStringConverter
 
 
 class BaseMarketKeyView(GenericAPIView):
-    queryset = MarketKey.objects.filter_active()
+    queryset = MarketKey.objects.filter_active().select_related('asset1', 'asset2')
     serializer_class = MarketKeySerializer
     permission_classes = (AllowAny, )
     pagination_class = MarketKeyPagination
