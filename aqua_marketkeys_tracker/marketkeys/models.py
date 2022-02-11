@@ -1,8 +1,28 @@
 from django.db import models
 
-from stellar_sdk import Asset
+from stellar_sdk import Asset as StellarAsset
 
 from aqua_marketkeys_tracker.marketkeys.pair import MarketPair
+from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string
+
+
+class Asset(models.Model):
+    code = models.CharField(max_length=12)
+    issuer = models.CharField(max_length=56)
+
+    is_banned = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['code', 'issuer']
+        indexes = [
+            models.Index(fields=['code', 'issuer']),
+        ]
+
+    def __str__(self):
+        return get_asset_string(self.get_stellar_asset())
+
+    def get_stellar_asset(self) -> StellarAsset:
+        return StellarAsset(self.code, self.issuer)
 
 
 class MarketKeyQuerySet(models.QuerySet):
@@ -24,7 +44,7 @@ class MarketKeyQuerySet(models.QuerySet):
             ),
         )
 
-    def filter_for_asset(self, asset: Asset):
+    def filter_for_asset(self, asset: StellarAsset):
         return self.filter(
             models.Q(
                 asset1_code=asset.code,
@@ -39,6 +59,9 @@ class MarketKeyQuerySet(models.QuerySet):
 class MarketKey(models.Model):
     account_id = models.CharField(max_length=56, unique=True)
     downvote_account_id = models.CharField(max_length=56, unique=True, null=True)
+
+    asset1 = models.ForeignKey(Asset, related_name='+', on_delete=models.DO_NOTHING, null=True)
+    asset2 = models.ForeignKey(Asset, related_name='+', on_delete=models.DO_NOTHING, null=True)
 
     asset1_code = models.CharField(max_length=12)
     asset1_issuer = models.CharField(max_length=56)
@@ -64,7 +87,7 @@ class MarketKey(models.Model):
         )
 
     def get_asset1(self):
-        return Asset(self.asset1_code, self.asset1_issuer or None)
+        return StellarAsset(self.asset1_code, self.asset1_issuer or None)
 
     def get_asset2(self):
-        return Asset(self.asset2_code, self.asset2_issuer or None)
+        return StellarAsset(self.asset2_code, self.asset2_issuer or None)
