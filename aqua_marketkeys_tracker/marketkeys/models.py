@@ -8,11 +8,18 @@ from aqua_marketkeys_tracker.marketkeys.pair import MarketPair
 from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string
 
 
+class AssetQuerySet(models.QuerySet):
+    def get_chunk(self, cursor, chunk_size):
+        return self.order_by('id').filter(id__gt=cursor)[:chunk_size]
+
+
 class Asset(models.Model):
     code = models.CharField(max_length=12)
     issuer = models.CharField(max_length=56)
 
     is_banned = models.BooleanField(default=False)
+
+    objects = AssetQuerySet.as_manager()
 
     class Meta:
         unique_together = ['code', 'issuer']
@@ -132,12 +139,14 @@ class AssetBan(models.Model):
     fixed_at = models.DateTimeField(null=True)
     unbanned_at = models.DateTimeField(null=True)
 
+    objects = AssetBanQuerySet.as_manager()
+
     def __str__(self):
         return f'Ban for {self.asset}'
 
     def unban_asset(self):
         with atomic():
-            if not AssetBan.objects.filter(asset=self.asset, status=self.Status.BANNED).exists:
+            if not AssetBan.objects.filter(asset=self.asset, status=self.Status.BANNED).exists():
                 self.asset.is_banned = False
                 self.asset.save(update_fields=['is_banned'])
 

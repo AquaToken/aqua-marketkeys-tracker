@@ -3,7 +3,6 @@ from typing import Iterator, Iterable, List
 from django.conf import settings
 
 import requests
-from more_itertools import chunked
 
 from aqua_marketkeys_tracker.marketkeys.models import Asset, AssetBan
 from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string
@@ -16,12 +15,12 @@ class AuthRequiredLoader:
 
     BAN_REASON = AssetBan.Reason.AUTH_REQUIRED
 
-    def get_assets(self) -> Iterator[Asset]:
+    def get_asset_chunks(self) -> Iterator[List[Asset]]:
         index = 0
         while True:
-            assets = list(Asset.objects.filter(id__gt=index)[:self.CHUNK_SIZE])
+            assets = list(Asset.objects.get_chunk(index, self.CHUNK_SIZE))
 
-            yield from assets
+            yield assets
 
             index = assets[-1].id
             if len(assets) < self.CHUNK_SIZE:
@@ -43,14 +42,14 @@ class AuthRequiredLoader:
 
         return response.json()['results']
 
-    def process_asset(self, asset, is_auth_required):
+    def process_asset(self, asset: Asset, is_auth_required: bool):
         if is_auth_required:
             asset.set_ban(self.BAN_REASON)
         else:
             asset.reset_ban(self.BAN_REASON)
 
     def run(self):
-        for chunk in chunked(self.get_assets(), self.CHUNK_SIZE):
+        for chunk in self.get_asset_chunks():
             assets_map = {
                 get_asset_string(asset): asset for asset in chunk
             }
