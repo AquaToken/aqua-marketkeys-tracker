@@ -40,6 +40,7 @@ stellar-sdk = ">=5.0.0,<6.0"
 python-dateutil = "*"
 django-redis = "*"
 requests = "*"
+more-itertools = "*"
 
 [requires]
 python_version = "3.8"

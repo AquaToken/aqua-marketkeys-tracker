@@ -8,8 +8,9 @@ import requests
 from stellar_sdk import Server
 
 from aqua_marketkeys_tracker.marketkeys.exceptions import MarketKeyParsingError
+from aqua_marketkeys_tracker.marketkeys.loaders.auth_required import AuthRequiredLoader
 from aqua_marketkeys_tracker.marketkeys.loaders.market_keys import MarketKeyLoader
-from aqua_marketkeys_tracker.marketkeys.models import MarketKey
+from aqua_marketkeys_tracker.marketkeys.models import MarketKey, AssetBan
 from aqua_marketkeys_tracker.marketkeys.parser import parse_account_info, MarketKeyParser
 from aqua_marketkeys_tracker.taskapp import app as celery_app
 from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string, parse_asset_string
@@ -90,3 +91,14 @@ def task_update_auth_required():
         i += 1
         if len(chunk) < ASSETS_CHUNK_SIZE:
             break
+
+
+@celery_app.task(ignore_result=True)
+def task_unban_assets():
+    for asset_ban in AssetBan.objects.filter_for_unban():
+        asset_ban.unban_asset()
+
+
+@celery_app.task(ignore_result=True)
+def task_check_auth_required():
+    AuthRequiredLoader().run()

@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.transaction import atomic
+from django.utils import timezone
 
 from stellar_sdk import Asset as StellarAsset
 
@@ -23,6 +25,27 @@ class Asset(models.Model):
 
     def get_stellar_asset(self) -> StellarAsset:
         return StellarAsset(self.code, self.issuer or None)
+
+    def set_ban(self, reason: str):
+        with atomic():
+            if AssetBan.objects.filter(asset=self, reason=reason, status=AssetBan.Status.BANNED).exists():
+                return
+
+            self.is_banned = True
+            self.save(update_fields=['is_banned'])
+            AssetBan.objects.create(
+                asset=self,
+                reason=reason,
+                status=AssetBan.Status.BANNED,
+            )
+
+    def reset_ban(self, reason: str):
+        if not AssetBan.objects.filter(asset=self, reason=reason, status=AssetBan.Status.BANNED).exists():
+            return
+
+        AssetBan.objects \
+            .filter(asset=self, reason=reason, status=AssetBan.Status.BANNED) \
+            .update(status=AssetBan.Status.FIXED, fixed_at=timezone.now())
 
 
 class MarketKeyQuerySet(models.QuerySet):
@@ -67,6 +90,7 @@ class MarketKey(models.Model):
     locked_at = models.DateTimeField()
 
     is_active = models.BooleanField(default=False)
+    # Deprecated
     is_auth_required = models.BooleanField(default=False)
 
     objects = MarketKeyQuerySet.as_manager()
@@ -79,3 +103,44 @@ class MarketKey(models.Model):
             self.asset1.get_stellar_asset(),
             self.asset2.get_stellar_asset(),
         )
+
+
+class AssetBanQuerySet(models.QuerySet):
+    def filter_for_unban(self):
+        model = self.model
+        now = timezone.now()
+        return self.filter(status=model.Status.FIXED, fixed_at__lt=now - model.UNBAN_TERM)
+
+
+class AssetBan(models.Model):
+    UNBAN_TERM = timezone.timedelta(days=7)
+
+    class Reason(models.TextChoices):
+        AUTH_REQUIRED = 'auth_req'
+        ISOLATED_MARKET = 'isolated'
+
+    class Status(models.TextChoices):
+        BANNED = 'ban'
+        FIXED = 'fixed'
+        UNBANNED = 'unban'
+
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='bans')
+    reason = models.CharField(max_length=8, choices=Reason.choices)
+    status = models.CharField(max_length=5, choices=Status.choices)
+
+    banned_at = models.DateTimeField(auto_now_add=True)
+    fixed_at = models.DateTimeField(null=True)
+    unbanned_at = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return f'Ban for {self.asset}'
+
+    def unban_asset(self):
+        with atomic():
+            if not AssetBan.objects.filter(asset=self.asset, status=self.Status.BANNED).exists:
+                self.asset.is_banned = False
+                self.asset.save(update_fields=['is_banned'])
+
+            self.status = self.Status.UNBANNED
+            self.unbanned_at = timezone.now()
+            self.save()

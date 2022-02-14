@@ -34,4 +34,14 @@ def setup_periodic_tasks(sender, **kwargs):
             'schedule': crontab(minute='2-59/5'),  # 5n+2
             'args': (),
         },
+        'aqua_marketkeys_tracker.marketkeys.tasks.task_unban_assets': {
+            'task': 'aqua_marketkeys_tracker.marketkeys.tasks.task_unban_assets',
+            'schedule': crontab(minute='*/5'),
+            'args': (),
+        },
+        'aqua_marketkeys_tracker.marketkeys.tasks.task_check_auth_required': {
+            'task': 'aqua_marketkeys_tracker.marketkeys.tasks.task_check_auth_required',
+            'schedule': crontab(minute='3-59/5'),  # 5n+3
+            'args': (),
+        },
     })

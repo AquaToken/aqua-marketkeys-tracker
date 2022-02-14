@@ -6,6 +6,7 @@ from aqua_marketkeys_tracker.marketkeys.models import MarketKey, Asset
 from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string
 
 
+# Deprecated
 class Command(BaseCommand):
     def create_asset(self, asset: StellarAsset) -> Asset:
         asset_string = get_asset_string(asset)
