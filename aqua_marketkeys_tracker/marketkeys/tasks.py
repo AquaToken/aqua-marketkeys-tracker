@@ -68,33 +68,6 @@ def task_update_downvote_market_keys():
 
 
 @celery_app.task(ignore_result=True)
-def task_update_auth_required():
-    assets = set()
-    for market_key in MarketKey.objects.filter_active().exclude(is_auth_required=True):
-        assets.add(get_asset_string(market_key.asset1.get_stellar_asset()))
-        assets.add(get_asset_string(market_key.asset2.get_stellar_asset()))
-
-    assets = list(assets)
-    i = 0
-    while True:
-        chunk = assets[i * ASSETS_CHUNK_SIZE:(i + 1) * ASSETS_CHUNK_SIZE]
-
-        response = requests.get(f'{settings.ASSETS_TRACKER_URL.rstrip("/")}{ASSETS_ENDPOINT}', params=[
-            ('asset', asset_string) for asset_string in chunk
-        ])
-        response.raise_for_status()
-        data = response.json()['results']
-
-        is_required_assets = [asset for asset in data if asset['auth_required']]
-        for asset in is_required_assets:
-            MarketKey.objects.filter_for_asset(parse_asset_string(asset['asset_string'])).update(is_auth_required=True)
-
-        i += 1
-        if len(chunk) < ASSETS_CHUNK_SIZE:
-            break
-
-
-@celery_app.task(ignore_result=True)
 def task_unban_assets():
     for asset_ban in AssetBan.objects.filter_for_unban():
         asset_ban.unban_asset()
