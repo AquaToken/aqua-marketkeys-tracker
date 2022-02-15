@@ -44,4 +44,9 @@ def setup_periodic_tasks(sender, **kwargs):
             'schedule': crontab(minute='3-59/5'),  # 5n+3
             'args': (),
         },
+        'aqua_marketkeys_tracker.marketkeys.tasks.task_check_market_isolation': {
+            'task': 'aqua_marketkeys_tracker.marketkeys.tasks.task_check_market_isolation',
+            'schedule': crontab(minute='4-59/5'),  # 5n+4
+            'args': (),
+        },
     })

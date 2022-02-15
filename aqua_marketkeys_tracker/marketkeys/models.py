@@ -50,9 +50,11 @@ class Asset(models.Model):
         if not AssetBan.objects.filter(asset=self, reason=reason, status=AssetBan.Status.BANNED).exists():
             return
 
-        AssetBan.objects \
-            .filter(asset=self, reason=reason, status=AssetBan.Status.BANNED) \
-            .update(status=AssetBan.Status.FIXED, fixed_at=timezone.now())
+        AssetBan.objects.filter(
+            asset=self, reason=reason, status=AssetBan.Status.BANNED,
+        ).update(
+            status=AssetBan.Status.FIXED, fixed_at=timezone.now(),
+        )
 
 
 class MarketKeyQuerySet(models.QuerySet):

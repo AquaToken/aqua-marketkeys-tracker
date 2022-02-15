@@ -1,4 +1,4 @@
-from typing import Iterator, Iterable, List
+from typing import Iterable, Iterator, List
 
 from django.conf import settings
 

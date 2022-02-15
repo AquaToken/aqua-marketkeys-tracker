@@ -4,7 +4,7 @@ from dateutil.parser import parse as date_parse
 from stellar_sdk import Asset as StellarAsset
 
 from aqua_marketkeys_tracker.marketkeys.exceptions import MarketKeyParsingError
-from aqua_marketkeys_tracker.marketkeys.models import MarketKey, Asset
+from aqua_marketkeys_tracker.marketkeys.models import Asset, MarketKey
 from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string
 
 

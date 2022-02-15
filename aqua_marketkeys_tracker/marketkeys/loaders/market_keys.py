@@ -1,14 +1,16 @@
 import logging
 import sys
-from typing import Optional, List
+from typing import List, Optional
 
 from django.conf import settings
+
 from stellar_sdk import Server
 
 from aqua_marketkeys_tracker.marketkeys.exceptions import MarketKeyParsingError
 from aqua_marketkeys_tracker.marketkeys.models import MarketKey
 from aqua_marketkeys_tracker.marketkeys.parser import MarketKeyParser
 from aqua_marketkeys_tracker.utils.stellar.requests import load_all_records
+
 
 logger = logging.getLogger(__name__)
 

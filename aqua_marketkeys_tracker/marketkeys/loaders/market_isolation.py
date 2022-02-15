@@ -5,7 +5,9 @@ from typing import AsyncIterator, List
 from django.conf import settings
 
 from asgiref.sync import sync_to_async
-from stellar_sdk import Server, Asset as StellarAsset, AiohttpClient
+from stellar_sdk import AiohttpClient
+from stellar_sdk import Asset as StellarAsset
+from stellar_sdk import Server
 
 from aqua_marketkeys_tracker.marketkeys.models import Asset, AssetBan
 
@@ -25,7 +27,7 @@ class MarketIsolationLoader:
         index = 0
         while True:
             assets = await sync_to_async(
-                lambda: list(Asset.objects.get_chunk(index, self.CHUNK_SIZE))
+                lambda: list(Asset.objects.get_chunk(index, self.CHUNK_SIZE)),
             )()
 
             yield assets
