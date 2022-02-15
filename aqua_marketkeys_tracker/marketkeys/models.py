@@ -19,6 +19,9 @@ class Asset(models.Model):
 
     is_banned = models.BooleanField(default=False)
 
+    voting_boost = models.DecimalField(max_digits=5, decimal_places=4, default=0)
+    voting_boost_cap = models.DecimalField(max_digits=5, decimal_places=4, default=0)
+
     objects = AssetQuerySet.as_manager()
 
     class Meta:
@@ -112,6 +115,25 @@ class MarketKey(models.Model):
             self.asset1.get_stellar_asset(),
             self.asset2.get_stellar_asset(),
         )
+
+    @property
+    def is_banned(self):
+        return self.asset1.is_banned or self.asset2.is_banned
+
+    @property
+    def boosted_asset(self):
+        if self.asset1.voting_boost > self.asset2.voting_boost:
+            return self.asset1
+        else:
+            return self.asset2
+
+    @property
+    def voting_boost(self):
+        return self.boosted_asset.voting_boost
+
+    @property
+    def voting_boost_cap(self):
+        return self.boosted_asset.voting_boost_cap
 
 
 class AssetBanQuerySet(models.QuerySet):
