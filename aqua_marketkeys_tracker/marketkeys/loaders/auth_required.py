@@ -51,7 +51,7 @@ class AuthRequiredLoader:
     def run(self):
         for chunk in self.get_asset_chunks():
             assets_map = {
-                get_asset_string(asset): asset for asset in chunk
+                get_asset_string(asset.get_stellar_asset()): asset for asset in chunk
             }
             for asset_data in self.load_asset_data(chunk):
                 asset = assets_map[asset_data['asset_string']]
