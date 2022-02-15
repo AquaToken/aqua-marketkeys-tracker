@@ -76,7 +76,13 @@ class ListMarketKeyView(ListModelMixin, BaseMarketKeyView):
         queryset = super(ListMarketKeyView, self).get_queryset()
 
         if all(field not in self.request.query_params for field in self.multiget_filter_fields):
-            queryset = queryset.exclude(downvote_account_id__isnull=True).exclude(is_auth_required=True)
+            queryset = queryset.exclude(
+                downvote_account_id__isnull=True,
+            ).exclude(
+                asset1__is_banned=True,
+            ).exclude(
+                asset2__is_banned=True,
+            )
 
         return queryset
 
