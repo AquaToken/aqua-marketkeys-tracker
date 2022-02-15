@@ -11,7 +11,7 @@ from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string
 class AuthRequiredLoader:
     CHUNK_SIZE = 50
 
-    ASSETS_TRACKER_URL = settings.ASSETS_TRACKER_URL
+    ASSETS_TRACKER_URL = settings.ASSETS_TRACKER_URL.rstrip("/")
 
     BAN_REASON = AssetBan.Reason.AUTH_REQUIRED
 
