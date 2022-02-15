@@ -15,12 +15,15 @@ class MarketKeySerializer(serializers.ModelSerializer):
     asset2_code = serializers.CharField(source='asset2.code')
     asset2_issuer = serializers.CharField(source='asset2.issuer')
 
+    is_banned = serializers.SerializerMethodField()
+
     class Meta:
         model = MarketKey
         fields = ['id', 'account_id',
                   'upvote_account_id', 'downvote_account_id',
                   'asset1', 'asset1_code', 'asset1_issuer',
                   'asset2', 'asset2_code', 'asset2_issuer',
+                  'is_banned',
                   'is_auth_required',
                   'created_at', 'locked_at']
 
@@ -29,3 +32,6 @@ class MarketKeySerializer(serializers.ModelSerializer):
 
     def get_asset2(self, obj):
         return get_asset_string(obj.asset2.get_stellar_asset())
+
+    def get_is_banned(self, obj):
+        return obj.asset1.is_banned or obj.asset2.is_banned
