@@ -111,6 +111,32 @@ class MarketKey(models.Model):
             self.asset2.get_stellar_asset(),
         )
 
+    @property
+    def is_banned(self):
+        return self.asset1.is_banned or self.asset2.is_banned
+
+    @property
+    def auth_required(self):
+        if not self.is_banned:
+            return False
+
+        return AssetBan.objects.filter(
+            asset__in=[self.asset1, self.asset2],
+            reason=AssetBan.Reason.AUTH_REQUIRED,
+            status__in=[AssetBan.Status.BANNED, AssetBan.Status.FIXED],
+        ).exists()
+
+    @property
+    def isolated_market(self):
+        if not self.is_banned:
+            return False
+
+        return AssetBan.objects.filter(
+            asset__in=[self.asset1, self.asset2],
+            reason=AssetBan.Reason.ISOLATED_MARKET,
+            status__in=[AssetBan.Status.BANNED, AssetBan.Status.FIXED],
+        ).exists()
+
 
 class AssetBanQuerySet(models.QuerySet):
     def filter_for_unban(self):
