@@ -15,7 +15,8 @@ class MarketKeySerializer(serializers.ModelSerializer):
     asset2_code = serializers.CharField(source='asset2.code')
     asset2_issuer = serializers.CharField(source='asset2.issuer')
 
-    is_banned = serializers.BooleanField()
+    auth_required = serializers.BooleanField()
+    no_liquidity = serializers.BooleanField(source='isolated_market')
 
     voting_boost = serializers.DecimalField(max_digits=5, decimal_places=4)
     voting_boost_cap = serializers.DecimalField(max_digits=5, decimal_places=4)
@@ -26,9 +27,8 @@ class MarketKeySerializer(serializers.ModelSerializer):
                   'upvote_account_id', 'downvote_account_id',
                   'asset1', 'asset1_code', 'asset1_issuer',
                   'asset2', 'asset2_code', 'asset2_issuer',
-                  'is_banned',
+                  'auth_required', 'no_liquidity',
                   'voting_boost', 'voting_boost_cap',
-                  'is_auth_required',
                   'created_at', 'locked_at']
 
     def get_asset1(self, obj):
