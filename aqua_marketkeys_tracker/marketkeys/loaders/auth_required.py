@@ -22,9 +22,10 @@ class AuthRequiredLoader:
 
             yield assets
 
-            index = assets[-1].id
             if len(assets) < self.CHUNK_SIZE:
                 break
+
+            index = assets[-1].id
 
     def get_assets_endpoint(self) -> str:
         return f'{self.ASSETS_TRACKER_URL}/api/v1/assets/'

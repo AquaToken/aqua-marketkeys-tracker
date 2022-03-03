@@ -32,9 +32,10 @@ class MarketIsolationLoader:
 
             yield assets
 
-            index = assets[-1].id
             if len(assets) < self.CHUNK_SIZE:
                 break
+
+            index = assets[-1].id
 
     def process_asset(self, asset: Asset, is_isolated: bool):
         if is_isolated:
