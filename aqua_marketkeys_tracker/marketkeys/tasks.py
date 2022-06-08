@@ -4,7 +4,6 @@ from typing import Optional
 
 from django.conf import settings
 
-import requests
 from stellar_sdk import Server
 
 from aqua_marketkeys_tracker.marketkeys.exceptions import MarketKeyParsingError
@@ -14,7 +13,6 @@ from aqua_marketkeys_tracker.marketkeys.loaders.market_keys import MarketKeyLoad
 from aqua_marketkeys_tracker.marketkeys.models import AssetBan, MarketKey
 from aqua_marketkeys_tracker.marketkeys.parser import MarketKeyParser, parse_account_info
 from aqua_marketkeys_tracker.taskapp import app as celery_app
-from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string, parse_asset_string
 from aqua_marketkeys_tracker.utils.stellar.requests import load_all_records
 
 

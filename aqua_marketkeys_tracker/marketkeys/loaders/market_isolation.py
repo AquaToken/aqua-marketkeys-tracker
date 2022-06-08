@@ -7,7 +7,7 @@ from django.conf import settings
 from asgiref.sync import sync_to_async
 from stellar_sdk import AiohttpClient
 from stellar_sdk import Asset as StellarAsset
-from stellar_sdk import Server
+from stellar_sdk import ServerAsync
 
 from aqua_marketkeys_tracker.marketkeys.models import Asset, AssetBan
 
@@ -43,12 +43,12 @@ class MarketIsolationLoader:
         else:
             asset.reset_ban(self.BAN_REASON)
 
-    def get_horizon_server(self) -> Server:
-        return Server(self.HORIZON_URL, client=AiohttpClient(
+    def get_horizon_server(self) -> ServerAsync:
+        return ServerAsync(self.HORIZON_URL, client=AiohttpClient(
             pool_size=self.POOL_SIZE,
         ))
 
-    async def check_asset(self, asset: Asset, server: Server):
+    async def check_asset(self, asset: Asset, server: ServerAsync):
         response = await server.strict_send_paths(
             self.PATH_TEST_ASSET,
             str(self.PATH_TEST_AMOUNT),
