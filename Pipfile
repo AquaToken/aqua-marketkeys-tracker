@@ -36,10 +36,10 @@ djangorestframework = ">=3.10"
 gunicorn = "*"
 boto3 = "*"
 Django = ">=3.2,<4.0"
-stellar-sdk = "*"
 python-dateutil = "*"
 django-redis = "*"
 requests = "*"
+stellar-sdk = {extras = ["aiohttp"], version = "*"}
 
 [requires]
 python_version = "3.8"
