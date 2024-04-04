@@ -42,6 +42,10 @@ class AuthFlagsLoader:
         return response.json()['results']
 
     def process_asset(self, asset: Asset, asset_data: dict):
+        # Temporary hack. I hope.
+        if get_asset_string(asset.get_stellar_asset()) in settings.IGNORE_FLAGS_ASSET_LIST:
+            return
+
         if asset_data['auth_required']:
             asset.set_ban(AssetBan.Reason.AUTH_REQUIRED)
         else:
