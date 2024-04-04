@@ -8,12 +8,10 @@ from aqua_marketkeys_tracker.marketkeys.models import Asset, AssetBan
 from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string
 
 
-class AuthRequiredLoader:
+class AuthFlagsLoader:
     CHUNK_SIZE = 50
 
     ASSETS_TRACKER_URL = settings.ASSETS_TRACKER_URL.rstrip("/")
-
-    BAN_REASON = AssetBan.Reason.AUTH_REQUIRED
 
     def get_asset_chunks(self) -> Iterator[List[Asset]]:
         index = 0
@@ -43,11 +41,19 @@ class AuthRequiredLoader:
 
         return response.json()['results']
 
-    def process_asset(self, asset: Asset, is_auth_required: bool):
-        if is_auth_required:
-            asset.set_ban(self.BAN_REASON)
+    def process_asset(self, asset: Asset, asset_data: dict):
+        if asset_data['auth_required']:
+            asset.set_ban(AssetBan.Reason.AUTH_REQUIRED)
         else:
-            asset.reset_ban(self.BAN_REASON)
+            asset.reset_ban(AssetBan.Reason.AUTH_REQUIRED)
+        if asset_data['auth_revocable']:
+            asset.set_ban(AssetBan.Reason.AUTH_REVOCABLE)
+        else:
+            asset.reset_ban(AssetBan.Reason.AUTH_REVOCABLE)
+        if asset_data['auth_clawback_enabled']:
+            asset.set_ban(AssetBan.Reason.AUTH_CLAWBACK_ENABLED)
+        else:
+            asset.reset_ban(AssetBan.Reason.AUTH_CLAWBACK_ENABLED)
 
     def run(self):
         for chunk in self.get_asset_chunks():
@@ -56,4 +62,4 @@ class AuthRequiredLoader:
             }
             for asset_data in self.load_asset_data(chunk):
                 asset = assets_map[asset_data['asset_string']]
-                self.process_asset(asset, asset_data['auth_required'])
+                self.process_asset(asset, asset_data)

@@ -7,7 +7,7 @@ from django.conf import settings
 from stellar_sdk import Server
 
 from aqua_marketkeys_tracker.marketkeys.exceptions import MarketKeyParsingError
-from aqua_marketkeys_tracker.marketkeys.loaders.auth_required import AuthRequiredLoader
+from aqua_marketkeys_tracker.marketkeys.loaders.auth_flags import AuthFlagsLoader
 from aqua_marketkeys_tracker.marketkeys.loaders.market_isolation import MarketIsolationLoader
 from aqua_marketkeys_tracker.marketkeys.loaders.market_keys import MarketKeyLoader
 from aqua_marketkeys_tracker.marketkeys.models import AssetBan, MarketKey
@@ -73,7 +73,7 @@ def task_unban_assets():
 
 @celery_app.task(ignore_result=True)
 def task_check_auth_required():
-    AuthRequiredLoader().run()
+    AuthFlagsLoader().run()
 
 
 @celery_app.task(ignore_result=True)

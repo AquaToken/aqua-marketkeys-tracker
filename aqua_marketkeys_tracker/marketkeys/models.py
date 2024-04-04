@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.transaction import atomic
 from django.utils import timezone
+from django.utils.functional import cached_property
 
 from stellar_sdk import Asset as StellarAsset
 
@@ -118,27 +119,40 @@ class MarketKey(models.Model):
     def is_banned(self):
         return self.asset1.is_banned or self.asset2.is_banned
 
+    @cached_property
+    def ban_reasons(self):
+        return set(AssetBan.objects.filter(
+            asset__in=[self.asset1, self.asset2],
+            status__in=[AssetBan.Status.BANNED, AssetBan.Status.FIXED],
+        ).values_list('reason', flat=True))
+
     @property
     def auth_required(self):
         if not self.is_banned:
             return False
 
-        return AssetBan.objects.filter(
-            asset__in=[self.asset1, self.asset2],
-            reason=AssetBan.Reason.AUTH_REQUIRED,
-            status__in=[AssetBan.Status.BANNED, AssetBan.Status.FIXED],
-        ).exists()
+        return AssetBan.Reason.AUTH_REQUIRED in self.ban_reasons
+
+    @property
+    def auth_revocable(self):
+        if not self.is_banned:
+            return False
+
+        return AssetBan.Reason.AUTH_REVOCABLE in self.ban_reasons
+
+    @property
+    def auth_clawback_enabled(self):
+        if not self.is_banned:
+            return False
+
+        return AssetBan.Reason.AUTH_CLAWBACK_ENABLED in self.ban_reasons
 
     @property
     def isolated_market(self):
         if not self.is_banned:
             return False
 
-        return AssetBan.objects.filter(
-            asset__in=[self.asset1, self.asset2],
-            reason=AssetBan.Reason.ISOLATED_MARKET,
-            status__in=[AssetBan.Status.BANNED, AssetBan.Status.FIXED],
-        ).exists()
+        return AssetBan.Reason.ISOLATED_MARKET in self.ban_reasons
 
     @property
     def boosted_asset(self):
@@ -168,6 +182,8 @@ class AssetBan(models.Model):
 
     class Reason(models.TextChoices):
         AUTH_REQUIRED = 'auth_req'
+        AUTH_REVOCABLE = 'auth_rev'
+        AUTH_CLAWBACK_ENABLED = 'auth_cla'
         ISOLATED_MARKET = 'isolated'
 
     class Status(models.TextChoices):
