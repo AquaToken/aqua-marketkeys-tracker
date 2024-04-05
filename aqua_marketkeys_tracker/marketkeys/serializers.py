@@ -15,6 +15,7 @@ class MarketKeySerializer(serializers.ModelSerializer):
     asset2_code = serializers.CharField(source='asset2.code')
     asset2_issuer = serializers.CharField(source='asset2.issuer')
 
+    is_banned = serializers.BooleanField()
     auth_required = serializers.BooleanField()
     auth_revocable = serializers.BooleanField()
     auth_clawback_enabled = serializers.BooleanField()
@@ -29,7 +30,7 @@ class MarketKeySerializer(serializers.ModelSerializer):
                   'upvote_account_id', 'downvote_account_id',
                   'asset1', 'asset1_code', 'asset1_issuer',
                   'asset2', 'asset2_code', 'asset2_issuer',
-                  'auth_required', 'auth_revocable',
+                  'is_banned', 'auth_required', 'auth_revocable',
                   'auth_clawback_enabled', 'no_liquidity',
                   'voting_boost', 'voting_boost_cap',
                   'created_at', 'locked_at']
