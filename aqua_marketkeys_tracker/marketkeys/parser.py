@@ -60,7 +60,7 @@ def parse_account_info(account_info: dict, marker: str) -> MarketKey:
         account_id=account_id,
         asset1=asset1,
         asset2=asset2,
-        locked_at=date_parse(last_modified_time),
+        locked_at=date_parse(last_modified_time) if last_modified_time else None,
     )
 
 
@@ -134,5 +134,5 @@ class MarketKeyParser:
             account_id=account_id,
             asset1=asset1,
             asset2=asset2,
-            locked_at=date_parse(last_modified_time),
+            locked_at=date_parse(last_modified_time) if last_modified_time else None,
         )
