@@ -22,7 +22,6 @@ class MarketKeySerializer(serializers.ModelSerializer):
     no_liquidity = serializers.BooleanField(source='isolated_market')
 
     voting_boost = serializers.DecimalField(max_digits=5, decimal_places=4)
-    voting_boost_cap = serializers.DecimalField(max_digits=5, decimal_places=4)
 
     class Meta:
         model = MarketKey
@@ -32,7 +31,7 @@ class MarketKeySerializer(serializers.ModelSerializer):
                   'asset2', 'asset2_code', 'asset2_issuer',
                   'is_banned', 'auth_required', 'auth_revocable',
                   'auth_clawback_enabled', 'no_liquidity',
-                  'voting_boost', 'voting_boost_cap',
+                  'voting_boost',
                   'created_at', 'locked_at']
 
     def get_asset1(self, obj):

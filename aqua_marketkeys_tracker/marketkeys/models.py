@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.db.transaction import atomic
 from django.utils import timezone
@@ -21,7 +23,6 @@ class Asset(models.Model):
     is_banned = models.BooleanField(default=False)
 
     voting_boost = models.DecimalField(max_digits=5, decimal_places=4, default=0)
-    voting_boost_cap = models.DecimalField(max_digits=5, decimal_places=4, default=0)
 
     objects = AssetQuerySet.as_manager()
 
@@ -155,19 +156,8 @@ class MarketKey(models.Model):
         return AssetBan.Reason.ISOLATED_MARKET in self.ban_reasons
 
     @property
-    def boosted_asset(self):
-        if self.asset1.voting_boost > self.asset2.voting_boost:
-            return self.asset1
-        else:
-            return self.asset2
-
-    @property
-    def voting_boost(self):
-        return self.boosted_asset.voting_boost
-
-    @property
-    def voting_boost_cap(self):
-        return self.boosted_asset.voting_boost_cap
+    def voting_boost(self) -> Decimal:
+        return self.asset1.voting_boost + self.asset2.voting_boost
 
 
 class AssetBanQuerySet(models.QuerySet):
