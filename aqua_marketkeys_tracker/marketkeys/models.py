@@ -23,6 +23,7 @@ class Asset(models.Model):
     is_banned = models.BooleanField(default=False)
 
     voting_boost = models.DecimalField(max_digits=5, decimal_places=4, default=0)
+    downvote_immunity = models.BooleanField(default=False)
 
     objects = AssetQuerySet.as_manager()
 
@@ -158,6 +159,10 @@ class MarketKey(models.Model):
     @property
     def voting_boost(self) -> Decimal:
         return self.asset1.voting_boost + self.asset2.voting_boost
+
+    @property
+    def downvote_immunity(self) -> bool:
+        return self.asset1.downvote_immunity or self.asset2.downvote_immunity
 
 
 class AssetBanQuerySet(models.QuerySet):
