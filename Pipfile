@@ -39,7 +39,7 @@ Django = ">=3.2,<4.0"
 python-dateutil = "*"
 django-redis = "*"
 requests = "*"
-stellar-sdk = "*"
+stellar-sdk = {extras = ["aiohttp"], version = "*"}
 
 [requires]
 python_version = "3.12"
