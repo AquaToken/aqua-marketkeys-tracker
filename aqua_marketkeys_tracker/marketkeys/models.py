@@ -21,6 +21,10 @@ class Asset(models.Model):
     issuer = models.CharField(max_length=56)
 
     is_banned = models.BooleanField(default=False)
+    is_whitelisted = models.BooleanField(
+        default=False,
+        help_text="Force allow asset even if there are reasons for ban. Mutually exclusive with is_banned"
+    )
 
     voting_boost = models.DecimalField(max_digits=5, decimal_places=4, default=0)
     downvote_immunity = models.BooleanField(default=False)
@@ -36,6 +40,19 @@ class Asset(models.Model):
     def __str__(self):
         return get_asset_string(self.get_stellar_asset())
 
+    def save(self, *args, **kwargs):
+        # unban on whitelist
+        if self.is_whitelisted and self.is_banned:
+            self.is_banned = False
+
+        super().save(*args, **kwargs)
+
+        # ban on whitelisted reset if there are ban records
+        if not self.whitelisted and not self.is_banned:
+            if AssetBan.objects.filter(asset=self, status=AssetBan.Status.BANNED).exists():
+                self.is_banned = True
+                self.save(update_fields=['is_banned'])
+
     def get_stellar_asset(self) -> StellarAsset:
         return StellarAsset(self.code, self.issuer or None)
 
@@ -44,8 +61,10 @@ class Asset(models.Model):
             if AssetBan.objects.filter(asset=self, reason=reason, status=AssetBan.Status.BANNED).exists():
                 return
 
-            self.is_banned = True
-            self.save(update_fields=['is_banned'])
+            if not self.whitelisted:
+                self.is_banned = True
+                self.save(update_fields=['is_banned'])
+
             AssetBan.objects.create(
                 asset=self,
                 reason=reason,
