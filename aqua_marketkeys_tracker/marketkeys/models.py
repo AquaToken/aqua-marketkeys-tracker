@@ -48,7 +48,7 @@ class Asset(models.Model):
         super().save(*args, **kwargs)
 
         # ban on whitelisted reset if there are ban records
-        if not self.whitelisted and not self.is_banned:
+        if not self.is_whitelisted and not self.is_banned:
             if AssetBan.objects.filter(asset=self, status=AssetBan.Status.BANNED).exists():
                 self.is_banned = True
                 self.save(update_fields=['is_banned'])
@@ -61,7 +61,7 @@ class Asset(models.Model):
             if AssetBan.objects.filter(asset=self, reason=reason, status=AssetBan.Status.BANNED).exists():
                 return
 
-            if not self.whitelisted:
+            if not self.is_whitelisted:
                 self.is_banned = True
                 self.save(update_fields=['is_banned'])
 
