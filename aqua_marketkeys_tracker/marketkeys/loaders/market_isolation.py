@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 from decimal import Decimal
 from typing import AsyncIterator, List
 
@@ -17,6 +18,9 @@ class MarketIsolationLoader:
 
     HORIZON_URL = settings.HORIZON_URL
     POOL_SIZE = 20
+
+    STELLAR_PASSPHRASE = settings.STELLAR_PASSPHRASE
+    AQUA_AMM_API_URL = settings.AQUA_AMM_API_URL
 
     PATH_TEST_ASSET = StellarAsset.native()
     PATH_TEST_AMOUNT = Decimal(1)
@@ -56,7 +60,26 @@ class MarketIsolationLoader:
         ).call()
         records = response['_embedded']['records']
 
-        await sync_to_async(self.process_asset)(asset, len(records) == 0)
+        is_isolated = len(records) == 0
+
+        # if there's no native path, check soroban path
+        if is_isolated:
+            async with aiohttp.ClientSession() as session:
+                data = {
+                    'token_in_address': self.PATH_TEST_ASSET.contract_id(self.STELLAR_PASSPHRASE),
+                    'token_out_address': asset.get_stellar_asset().contract_id(self.STELLAR_PASSPHRASE),
+                    'amount': int(self.PATH_TEST_AMOUNT * Decimal(1e7)),
+                }
+                async with session.post(
+                    f'{self.AQUA_AMM_API_URL}/api/external/v2/find-path/',
+                    json=data
+                ) as find_swap_response:
+                    if find_swap_response.status == 200:
+                        swap_result = await find_swap_response.json()
+                        if swap_result.get('success'):
+                            is_isolated = False
+
+        await sync_to_async(self.process_asset)(asset, is_isolated)
 
     async def async_run(self):
         async with self.get_horizon_server() as server:

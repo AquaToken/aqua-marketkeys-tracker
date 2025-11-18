@@ -69,7 +69,7 @@ SENTRY_ENABLED = False
 
 STELLAR_PASSPHRASE = 'Test SDF Network ; September 2015'
 HORIZON_URL = 'https://horizon-testnet.stellar.org'
-
+AQUA_AMM_API_URL = 'https://amm-api-testnet.aqua.network'
 
 # Market key configuration
 # --------------------------------------------------------------------------
