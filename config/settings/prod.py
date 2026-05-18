@@ -85,9 +85,9 @@ if SENTRY_ENABLED:
 # Horizon configuration
 # --------------------------------------------------------------------------
 
-STELLAR_PASSPHRASE = 'Public Global Stellar Network ; September 2015'
-HORIZON_URL = 'https://horizon.stellar.org'
-AQUA_AMM_API_URL = 'https://amm-api.aqua.network'
+STELLAR_PASSPHRASE = env('STELLAR_PASSPHRASE', default='Public Global Stellar Network ; September 2015')
+HORIZON_URL = env('HORIZON_URL', default='https://horizon.stellar.org')
+AQUA_AMM_API_URL = env('AQUA_AMM_API_URL', default='https://amm-api.aqua.network')
 
 
 # Market key configuration
