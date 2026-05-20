@@ -15,11 +15,12 @@ class MarketKeySerializer(serializers.ModelSerializer):
     asset2_code = serializers.CharField(source='asset2.code')
     asset2_issuer = serializers.CharField(source='asset2.issuer')
 
-    is_banned = serializers.BooleanField()
-    auth_required = serializers.BooleanField()
-    auth_revocable = serializers.BooleanField()
-    auth_clawback_enabled = serializers.BooleanField()
-    no_liquidity = serializers.BooleanField(source='isolated_market')
+    # todo: drop the following five fields after frontend stops reading them
+    is_banned = serializers.SerializerMethodField()
+    auth_required = serializers.SerializerMethodField()
+    auth_revocable = serializers.SerializerMethodField()
+    auth_clawback_enabled = serializers.SerializerMethodField()
+    no_liquidity = serializers.SerializerMethodField()
 
     voting_boost = serializers.DecimalField(max_digits=5, decimal_places=4)
     downvote_immunity = serializers.BooleanField()
@@ -40,3 +41,18 @@ class MarketKeySerializer(serializers.ModelSerializer):
 
     def get_asset2(self, obj):
         return get_asset_string(obj.asset2.get_stellar_asset())
+
+    def get_is_banned(self, _obj):
+        return False
+
+    def get_auth_required(self, _obj):
+        return False
+
+    def get_auth_revocable(self, _obj):
+        return False
+
+    def get_auth_clawback_enabled(self, _obj):
+        return False
+
+    def get_no_liquidity(self, _obj):
+        return False

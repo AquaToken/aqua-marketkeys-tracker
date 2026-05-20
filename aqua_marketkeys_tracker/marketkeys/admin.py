@@ -12,7 +12,6 @@ class MarketKeyAdmin(admin.ModelAdmin):
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
-    list_display = ['code', 'issuer', 'is_banned']
-    readonly_fields = ['code', 'issuer', 'is_banned']
+    list_display = ['code', 'issuer']
+    readonly_fields = ['code', 'issuer']
     ordering = ['code', 'issuer']
-    list_filter = ['is_banned', 'is_whitelisted']

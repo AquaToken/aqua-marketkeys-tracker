@@ -7,10 +7,8 @@ from django.conf import settings
 from stellar_sdk import Server
 
 from aqua_marketkeys_tracker.marketkeys.exceptions import MarketKeyParsingError
-from aqua_marketkeys_tracker.marketkeys.loaders.auth_flags import AuthFlagsLoader
-from aqua_marketkeys_tracker.marketkeys.loaders.market_isolation import MarketIsolationLoader
 from aqua_marketkeys_tracker.marketkeys.loaders.market_keys import MarketKeyLoader
-from aqua_marketkeys_tracker.marketkeys.models import AssetBan, MarketKey
+from aqua_marketkeys_tracker.marketkeys.models import MarketKey
 from aqua_marketkeys_tracker.marketkeys.parser import MarketKeyParser, parse_account_info
 from aqua_marketkeys_tracker.taskapp import app as celery_app
 from aqua_marketkeys_tracker.utils.stellar.requests import load_all_records
@@ -63,19 +61,3 @@ def task_update_downvote_market_keys():
 
         market_key.downvote_account_id = downvote_market_key.account_id
         market_key.save()
-
-
-@celery_app.task(ignore_result=True)
-def task_unban_assets():
-    for asset_ban in AssetBan.objects.filter_for_unban():
-        asset_ban.unban_asset()
-
-
-@celery_app.task(ignore_result=True)
-def task_check_auth_required():
-    AuthFlagsLoader().run()
-
-
-@celery_app.task(ignore_result=True)
-def task_check_market_isolation():
-    MarketIsolationLoader().run()
