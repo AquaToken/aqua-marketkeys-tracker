@@ -20,12 +20,6 @@ class Asset(models.Model):
     code = models.CharField(max_length=12)
     issuer = models.CharField(max_length=56)
 
-    is_banned = models.BooleanField(default=False)
-    is_whitelisted = models.BooleanField(
-        default=False,
-        help_text="Force allow asset even if there are reasons for ban. Mutually exclusive with is_banned"
-    )
-
     voting_boost = models.DecimalField(max_digits=5, decimal_places=4, default=0)
     downvote_immunity = models.BooleanField(default=False)
 
@@ -40,46 +34,8 @@ class Asset(models.Model):
     def __str__(self):
         return get_asset_string(self.get_stellar_asset())
 
-    def save(self, *args, **kwargs):
-        # unban on whitelist
-        if self.is_whitelisted and self.is_banned:
-            self.is_banned = False
-
-        super().save(*args, **kwargs)
-
-        # ban on whitelisted reset if there are ban records
-        if not self.is_whitelisted and not self.is_banned:
-            if AssetBan.objects.filter(asset=self, status=AssetBan.Status.BANNED).exists():
-                self.is_banned = True
-                self.save(update_fields=['is_banned'])
-
     def get_stellar_asset(self) -> StellarAsset:
         return StellarAsset(self.code, self.issuer or None)
-
-    def set_ban(self, reason: str):
-        with atomic():
-            if AssetBan.objects.filter(asset=self, reason=reason, status=AssetBan.Status.BANNED).exists():
-                return
-
-            if not self.is_whitelisted:
-                self.is_banned = True
-                self.save(update_fields=['is_banned'])
-
-            AssetBan.objects.create(
-                asset=self,
-                reason=reason,
-                status=AssetBan.Status.BANNED,
-            )
-
-    def reset_ban(self, reason: str):
-        if not AssetBan.objects.filter(asset=self, reason=reason, status=AssetBan.Status.BANNED).exists():
-            return
-
-        AssetBan.objects.filter(
-            asset=self, reason=reason, status=AssetBan.Status.BANNED,
-        ).update(
-            status=AssetBan.Status.FIXED, fixed_at=timezone.now(),
-        )
 
 
 class MarketKeyQuerySet(models.QuerySet):
@@ -137,93 +93,9 @@ class MarketKey(models.Model):
         )
 
     @property
-    def is_banned(self):
-        return self.asset1.is_banned or self.asset2.is_banned
-
-    @cached_property
-    def ban_reasons(self):
-        return set(AssetBan.objects.filter(
-            asset__in=[self.asset1, self.asset2],
-            status__in=[AssetBan.Status.BANNED, AssetBan.Status.FIXED],
-        ).values_list('reason', flat=True))
-
-    @property
-    def auth_required(self):
-        if not self.is_banned:
-            return False
-
-        return AssetBan.Reason.AUTH_REQUIRED in self.ban_reasons
-
-    @property
-    def auth_revocable(self):
-        if not self.is_banned:
-            return False
-
-        return AssetBan.Reason.AUTH_REVOCABLE in self.ban_reasons
-
-    @property
-    def auth_clawback_enabled(self):
-        if not self.is_banned:
-            return False
-
-        return AssetBan.Reason.AUTH_CLAWBACK_ENABLED in self.ban_reasons
-
-    @property
-    def isolated_market(self):
-        if not self.is_banned:
-            return False
-
-        return AssetBan.Reason.ISOLATED_MARKET in self.ban_reasons
-
-    @property
     def voting_boost(self) -> Decimal:
         return self.asset1.voting_boost + self.asset2.voting_boost
 
     @property
     def downvote_immunity(self) -> bool:
         return self.asset1.downvote_immunity or self.asset2.downvote_immunity
-
-
-class AssetBanQuerySet(models.QuerySet):
-    def filter_for_unban(self):
-        model = self.model
-        now = timezone.now()
-        return self.filter(status=model.Status.FIXED, fixed_at__lt=now - model.UNBAN_TERM)
-
-
-class AssetBan(models.Model):
-    UNBAN_TERM = timezone.timedelta(days=7)
-
-    class Reason(models.TextChoices):
-        AUTH_REQUIRED = 'auth_req'
-        AUTH_REVOCABLE = 'auth_rev'
-        AUTH_CLAWBACK_ENABLED = 'auth_cla'
-        ISOLATED_MARKET = 'isolated'
-
-    class Status(models.TextChoices):
-        BANNED = 'ban'
-        FIXED = 'fixed'
-        UNBANNED = 'unban'
-
-    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='bans')
-    reason = models.CharField(max_length=8, choices=Reason.choices)
-    status = models.CharField(max_length=5, choices=Status.choices)
-
-    banned_at = models.DateTimeField(auto_now_add=True)
-    fixed_at = models.DateTimeField(null=True)
-    unbanned_at = models.DateTimeField(null=True)
-
-    objects = AssetBanQuerySet.as_manager()
-
-    def __str__(self):
-        return f'Ban for {self.asset}'
-
-    def unban_asset(self):
-        with atomic():
-            if not AssetBan.objects.filter(asset=self.asset, status=self.Status.BANNED).exists():
-                self.asset.is_banned = False
-                self.asset.save(update_fields=['is_banned'])
-
-            self.status = self.Status.UNBANNED
-            self.unbanned_at = timezone.now()
-            self.save()
