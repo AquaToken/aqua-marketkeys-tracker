@@ -12,6 +12,7 @@ class MarketKeyAdmin(admin.ModelAdmin):
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
-    list_display = ['code', 'issuer']
+    list_display = ['code', 'issuer', 'in_asset_registry']
+    list_filter = ['in_asset_registry']
     readonly_fields = ['code', 'issuer']
     ordering = ['code', 'issuer']
