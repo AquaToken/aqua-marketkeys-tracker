@@ -18,11 +18,17 @@ class AssetRegistryLoader:
             return False
         parsed = urlparse(raw_next)
         base = urlparse(expected_base)
-        return (
-            parsed.scheme == "https"
-            and parsed.netloc == base.netloc
-            and parsed.path.startswith(base.path.rstrip("/"))
-        )
+        if parsed.scheme != "https":
+            return False
+        if parsed.netloc != base.netloc:
+            return False
+        # Reject path-traversal escapes before normalization.
+        if ".." in parsed.path.split("/"):
+            return False
+        # Exact path match (after stripping trailing slash on both sides).
+        # DRF pagination's `next` URL preserves the original endpoint path verbatim,
+        # so an exact match is correct and rejects all sibling-endpoint escapes.
+        return parsed.path.rstrip("/") == base.path.rstrip("/")
 
     def run(self):
         url = settings.GOVERNANCE_API_URL + settings.ASSET_REGISTRY_ENDPOINT
