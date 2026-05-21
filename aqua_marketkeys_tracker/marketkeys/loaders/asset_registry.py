@@ -1,5 +1,6 @@
 import json
 import logging
+from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
@@ -12,6 +13,17 @@ logger = logging.getLogger(__name__)
 
 
 class AssetRegistryLoader:
+    def _is_valid_next(self, raw_next, expected_base):
+        if not isinstance(raw_next, str):
+            return False
+        parsed = urlparse(raw_next)
+        base = urlparse(expected_base)
+        return (
+            parsed.scheme == "https"
+            and parsed.netloc == base.netloc
+            and parsed.path.startswith(base.path.rstrip("/"))
+        )
+
     def run(self):
         url = settings.GOVERNANCE_API_URL + settings.ASSET_REGISTRY_ENDPOINT
         all_results = []
@@ -22,11 +34,14 @@ class AssetRegistryLoader:
             try:
                 if first_page:
                     response = requests.get(
-                        next_url, params={"whitelisted": "true"}, timeout=30
+                        next_url,
+                        params={"whitelisted": "true"},
+                        timeout=30,
+                        allow_redirects=False,
                     )
                     first_page = False
                 else:
-                    response = requests.get(next_url, timeout=30)
+                    response = requests.get(next_url, timeout=30, allow_redirects=False)
             except requests.RequestException:
                 logger.warning("Asset registry fetch failed.", exc_info=True)
                 return
@@ -71,7 +86,20 @@ class AssetRegistryLoader:
                     return
 
             all_results.extend(data["results"])
-            next_url = data.get("next")
+            raw_next = data.get("next")
+            if raw_next is None:
+                next_url = None
+            elif self._is_valid_next(
+                raw_next,
+                settings.GOVERNANCE_API_URL + settings.ASSET_REGISTRY_ENDPOINT,
+            ):
+                next_url = raw_next
+            else:
+                logger.warning(
+                    "Asset registry next URL rejected (off-host or malformed): %s",
+                    raw_next,
+                )
+                return
 
         desired_set = {
             (r["asset_code"], r["asset_issuer"] or "")
