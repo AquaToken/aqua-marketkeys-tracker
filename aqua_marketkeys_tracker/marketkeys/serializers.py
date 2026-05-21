@@ -24,6 +24,9 @@ class MarketKeySerializer(serializers.ModelSerializer):
 
     voting_boost = serializers.DecimalField(max_digits=5, decimal_places=4)
     downvote_immunity = serializers.BooleanField()
+    whitelisted_for_rewards = serializers.SerializerMethodField()
+    asset1_in_asset_registry = serializers.BooleanField(source='asset1.in_asset_registry')
+    asset2_in_asset_registry = serializers.BooleanField(source='asset2.in_asset_registry')
 
     class Meta:
         model = MarketKey
@@ -34,7 +37,9 @@ class MarketKeySerializer(serializers.ModelSerializer):
                   'is_banned', 'auth_required', 'auth_revocable',
                   'auth_clawback_enabled', 'no_liquidity',
                   'voting_boost', 'downvote_immunity',
-                  'created_at', 'locked_at']
+                  'created_at', 'locked_at',
+                  'whitelisted_for_rewards', 'asset1_in_asset_registry',
+                  'asset2_in_asset_registry']
 
     def get_asset1(self, obj):
         return get_asset_string(obj.asset1.get_stellar_asset())
@@ -56,3 +61,6 @@ class MarketKeySerializer(serializers.ModelSerializer):
 
     def get_no_liquidity(self, _obj):
         return False
+
+    def get_whitelisted_for_rewards(self, obj):
+        return obj.asset1.in_asset_registry and obj.asset2.in_asset_registry
