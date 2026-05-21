@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class AssetRegistryLoader:
+    MAX_PAGES = 50
+
     def _is_valid_next(self, raw_next, expected_base):
         if not isinstance(raw_next, str):
             return False
@@ -35,8 +37,17 @@ class AssetRegistryLoader:
         all_results = []
         first_page = True
         next_url = url
+        pages_fetched = 0
 
         while next_url:
+            pages_fetched += 1
+            if pages_fetched > self.MAX_PAGES:
+                logger.warning(
+                    "Asset registry sync aborted: pagination exceeded MAX_PAGES=%d (suspected upstream loop)",
+                    self.MAX_PAGES,
+                )
+                return
+
             try:
                 if first_page:
                     response = requests.get(
