@@ -29,4 +29,9 @@ def setup_periodic_tasks(sender, **kwargs):
             'schedule': crontab(minute='1-59/5'),  # 5n+1
             'args': (),
         },
+        'aqua_marketkeys_tracker.marketkeys.tasks.task_sync_asset_registry': {
+            'task': 'aqua_marketkeys_tracker.marketkeys.tasks.task_sync_asset_registry',
+            'schedule': crontab(hour=2, minute=7),
+            'args': (),
+        },
     })

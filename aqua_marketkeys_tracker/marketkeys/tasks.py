@@ -61,3 +61,10 @@ def task_update_downvote_market_keys():
 
         market_key.downvote_account_id = downvote_market_key.account_id
         market_key.save()
+
+
+@celery_app.task(ignore_result=True)
+def task_sync_asset_registry():
+    from aqua_marketkeys_tracker.marketkeys.loaders.asset_registry import AssetRegistryLoader
+
+    AssetRegistryLoader().run()
