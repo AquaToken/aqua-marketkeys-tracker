@@ -1,9 +1,6 @@
 from decimal import Decimal
 
 from django.db import models
-from django.db.transaction import atomic
-from django.utils import timezone
-from django.utils.functional import cached_property
 
 from stellar_sdk import Asset as StellarAsset
 
@@ -22,6 +19,7 @@ class Asset(models.Model):
 
     voting_boost = models.DecimalField(max_digits=5, decimal_places=4, default=0)
     downvote_immunity = models.BooleanField(default=False)
+    in_asset_registry = models.BooleanField(default=False)
 
     objects = AssetQuerySet.as_manager()
 
