@@ -1,3 +1,4 @@
+# ruff: noqa: F405
 import sentry_sdk
 from kombu import Exchange, Queue  # NOQA
 from sentry_sdk.integrations.celery import CeleryIntegration
@@ -97,3 +98,5 @@ UPVOTE_MARKET_KEY_MARKER = env('UPVOTE_MARKET_KEY_MARKER')
 DOWNVOTE_MARKET_KEY_MARKER = env('DOWNVOTE_MARKET_KEY_MARKER')
 
 ASSETS_TRACKER_URL = env('ASSETS_TRACKER_URL')
+GOVERNANCE_API_URL = env('GOVERNANCE_API_URL', default='https://governance-api.aqua.network')
+ASSET_REGISTRY_ENDPOINT = env('ASSET_REGISTRY_ENDPOINT', default='/api/asset-tokens/')
