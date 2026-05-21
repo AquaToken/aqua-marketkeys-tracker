@@ -53,17 +53,20 @@ class AssetRegistryLoader:
 
             for record in data["results"]:
                 if (
-                    "asset_code" not in record
+                    not isinstance(record, dict)
+                    or "asset_code" not in record
                     or "asset_issuer" not in record
                     or "whitelisted" not in record
+                    or not isinstance(record["asset_code"], str)
+                    or not record["asset_code"]
+                    or not (
+                        record["asset_issuer"] is None
+                        or isinstance(record["asset_issuer"], str)
+                    )
+                    or not isinstance(record["whitelisted"], bool)
                 ):
                     logger.warning(
-                        "Asset registry record missing required fields: %s", record
-                    )
-                    return
-                if not isinstance(record["whitelisted"], bool):
-                    logger.warning(
-                        "Asset registry record whitelisted is not bool: %s", record
+                        "Asset registry record has unexpected shape: %s", record
                     )
                     return
 
