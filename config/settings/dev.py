@@ -76,7 +76,6 @@ AQUA_AMM_API_URL = 'https://amm-api-testnet.aqua.network'
 # --------------------------------------------------------------------------
 
 UPVOTE_MARKET_KEY_MARKER = 'GA2UB7VXXXUSEAQUAXXXAQUARIUSVOTINGWALLETXXXPOWEREDBYAQUA'
-DOWNVOTE_MARKET_KEY_MARKER = 'GAYVCXXXUSEAQUAXXXAQUARIUSDOWNVOTEWALLETXXXPOWEREDBYAQUA'
 
 ASSETS_TRACKER_URL = env('ASSETS_TRACKER_URL', default='https://assets.example.com/')
 GOVERNANCE_API_URL = env('GOVERNANCE_API_URL', default='https://governance-api.aqua.network')
