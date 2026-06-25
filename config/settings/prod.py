@@ -95,7 +95,6 @@ AQUA_AMM_API_URL = env('AQUA_AMM_API_URL', default='https://amm-api.aqua.network
 # --------------------------------------------------------------------------
 
 UPVOTE_MARKET_KEY_MARKER = env('UPVOTE_MARKET_KEY_MARKER')
-DOWNVOTE_MARKET_KEY_MARKER = env('DOWNVOTE_MARKET_KEY_MARKER')
 
 ASSETS_TRACKER_URL = env('ASSETS_TRACKER_URL')
 GOVERNANCE_API_URL = env('GOVERNANCE_API_URL', default='https://governance-api.aqua.network')

@@ -75,12 +75,6 @@ class ListMarketKeyView(ListModelMixin, BaseMarketKeyView):
     def get_queryset(self):
         queryset = super(ListMarketKeyView, self).get_queryset()
 
-        if all(field not in self.request.query_params for field in self.multiget_filter_fields):
-            # todo: remove filter after downvotes deprecate
-            queryset = queryset.exclude(
-                downvote_account_id__isnull=True,
-            )
-
         return queryset
 
     def get(self, request, *args, **kwargs):
