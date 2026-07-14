@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
-from django.db.models import Q
+from stellar_sdk import StrKey
 
 from aqua_marketkeys_tracker.marketkeys.models import Asset
 
@@ -83,18 +83,18 @@ class AssetRegistryLoader:
                 logger.warning("Asset registry response has unexpected shape.")
                 return
 
+            # Matching is contract-based: the registry serves the canonical
+            # `asset_contract_address` for every token (SAC for classic assets,
+            # the token contract for soroban ones), and every local Asset row
+            # carries `contract_id`. `asset_code`/`asset_issuer` are nullable
+            # for soroban tokens and are not used here.
             for record in data["results"]:
                 if (
                     not isinstance(record, dict)
-                    or "asset_code" not in record
-                    or "asset_issuer" not in record
+                    or "asset_contract_address" not in record
                     or "whitelisted" not in record
-                    or not isinstance(record["asset_code"], str)
-                    or not record["asset_code"]
-                    or not (
-                        record["asset_issuer"] is None
-                        or isinstance(record["asset_issuer"], str)
-                    )
+                    or not isinstance(record["asset_contract_address"], str)
+                    or not StrKey.is_valid_contract(record["asset_contract_address"])
                     or not isinstance(record["whitelisted"], bool)
                 ):
                     logger.warning(
@@ -119,7 +119,7 @@ class AssetRegistryLoader:
                 return
 
         desired_set = {
-            (r["asset_code"], r["asset_issuer"] or "")
+            r["asset_contract_address"]
             for r in all_results
             if r["whitelisted"] is True
         }
@@ -130,18 +130,14 @@ class AssetRegistryLoader:
             )
             return
 
-        membership_q = Q()
-        for code, issuer in desired_set:
-            membership_q |= Q(code=code, issuer=issuer)
-
         added = (
             Asset.objects.filter(in_asset_registry=False)
-            .filter(membership_q)
+            .filter(contract_id__in=desired_set)
             .update(in_asset_registry=True)
         )
         removed = (
             Asset.objects.filter(in_asset_registry=True)
-            .exclude(membership_q)
+            .exclude(contract_id__in=desired_set)
             .update(in_asset_registry=False)
         )
 

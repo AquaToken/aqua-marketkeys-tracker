@@ -36,11 +36,11 @@ class MarketKeyLoader:
     def activate_market_keys(self, market_keys: List[MarketKey]):
         exists_market_pairs = set()
         for market_key in sorted(market_keys, key=lambda mk: mk.locked_at):
-            market_pair = market_key.get_market_pair()
+            market_pair = market_key.get_contract_pair()
             if market_pair in exists_market_pairs:
                 continue
 
-            if not MarketKey.objects.filter_for_market_pair(market_pair).exists():
+            if not MarketKey.objects.filter_for_contract_pair(*market_pair).exists():
                 market_key.is_active = True
 
             exists_market_pairs.add(market_pair)
