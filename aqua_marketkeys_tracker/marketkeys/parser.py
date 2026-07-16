@@ -77,6 +77,10 @@ class MarketKeyParser:
         self.market_key = market_type
 
         self.assets_cache = {}
+        # Set when the parser creates an Asset row it has not seen before.
+        # New assets have in_asset_registry=False until the registry sync runs,
+        # so the caller should trigger the sync right away.
+        self.created_new_assets = False
 
     def get_asset_object(self, asset: StellarAsset) -> Asset:
         asset_string = get_asset_string(asset)
@@ -94,6 +98,8 @@ class MarketKeyParser:
             is_sac=True,
             defaults={'contract_id': contract_id},
         )
+        if created:
+            self.created_new_assets = True
         if not asset_object.contract_id:
             asset_object.contract_id = contract_id
             asset_object.save(update_fields=['contract_id'])
@@ -115,6 +121,7 @@ class MarketKeyParser:
                 contract_id=contract_id,
                 is_sac=False,
             )
+            self.created_new_assets = True
 
         self.assets_cache[contract_id] = asset_object
 
