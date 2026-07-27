@@ -1,7 +1,3 @@
-from stellar_sdk import Asset
-from stellar_sdk.exceptions import AssetIssuerInvalidError
-
-
 class AssetStringConverter:
     """Matches 'native', classic 'CODE:ISSUER' or a soroban contract id 'C...'.
 

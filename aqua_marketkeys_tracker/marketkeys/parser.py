@@ -7,7 +7,13 @@ from stellar_sdk import StrKey
 from aqua_marketkeys_tracker.marketkeys.exceptions import MarketKeyParsingError
 from aqua_marketkeys_tracker.marketkeys.models import Asset, MarketKey
 from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string
-from aqua_marketkeys_tracker.utils.stellar.soroban import ContractDecodeError, decode_data_entry_contract
+from aqua_marketkeys_tracker.utils.stellar.soroban import (
+    ContractDecodeError,
+    TokenResolveError,
+    decode_data_entry_contract,
+    resolve_classic_asset,
+)
+
 
 TOKEN_DATA_ENTRY_KEYS = ('token_1', 'token_2')
 
@@ -82,6 +88,16 @@ class MarketKeyParser:
         # so the caller should trigger the sync right away.
         self.created_new_assets = False
 
+    def _cache_asset(self, asset_object: Asset, *keys: str) -> Asset:
+        # An asset is reachable both by its asset string and by its contract id
+        # (a classic asset and its SAC address are the same Asset row), so cache
+        # it under every key it can be looked up by.
+        for key in (*keys, asset_object.contract_id):
+            if key:
+                self.assets_cache[key] = asset_object
+
+        return asset_object
+
     def get_asset_object(self, asset: StellarAsset) -> Asset:
         asset_string = get_asset_string(asset)
 
@@ -91,6 +107,24 @@ class MarketKeyParser:
         code = asset.code
         issuer = asset.issuer or ''
         contract_id = asset.contract_id(settings.STELLAR_PASSPHRASE)
+
+        # Resolve by contract id first: the SAC address is unique per asset, and a
+        # row may already exist for it (e.g. created as a soroban token before this
+        # asset was seen as a trustline). Creating a second row would violate
+        # `uniq_asset_contract` and crash the whole market key update task.
+        asset_object = Asset.objects.filter(contract_id=contract_id).first()
+
+        if asset_object is not None:
+            if not asset_object.is_sac:
+                # Adopt the squatted row instead of failing: it is the same asset.
+                asset_object.code = code
+                asset_object.issuer = issuer
+                asset_object.is_sac = True
+                asset_object.save(update_fields=['code', 'issuer', 'is_sac'])
+                self.created_new_assets = True
+
+            return self._cache_asset(asset_object, asset_string)
+
         # TODO: Refactor to bulk create if needed.
         asset_object, created = Asset.objects.get_or_create(
             code=code,
@@ -104,9 +138,7 @@ class MarketKeyParser:
             asset_object.contract_id = contract_id
             asset_object.save(update_fields=['contract_id'])
 
-        self.assets_cache[asset_string] = asset_object
-
-        return self.assets_cache[asset_string]
+        return self._cache_asset(asset_object, asset_string)
 
     def get_contract_asset_object(self, contract_id: str) -> Asset:
         if contract_id in self.assets_cache:
@@ -114,18 +146,32 @@ class MarketKeyParser:
 
         asset_object = Asset.objects.filter(contract_id=contract_id).first()
 
-        if asset_object is None:
-            asset_object = Asset.objects.create(
-                code='',
-                issuer='',
-                contract_id=contract_id,
-                is_sac=False,
-            )
-            self.created_new_assets = True
+        if asset_object is not None:
+            return self._cache_asset(asset_object)
 
-        self.assets_cache[contract_id] = asset_object
+        # A `token_N` entry may point at the SAC of a classic asset instead of a
+        # pure soroban token. Such a market must be tracked as a classic pair,
+        # otherwise the same market becomes trackable twice and the SAC address
+        # squats the contract id of the classic asset row.
+        try:
+            classic_asset = resolve_classic_asset(contract_id)
+        except TokenResolveError as exc:
+            # Retry on the next run instead of guessing: defaulting to "pure
+            # soroban token" here would create the squatting row on any RPC hiccup.
+            raise MarketKeyParsingError(str(exc))
 
-        return self.assets_cache[contract_id]
+        if classic_asset is not None:
+            return self.get_asset_object(classic_asset)
+
+        asset_object = Asset.objects.create(
+            code='',
+            issuer='',
+            contract_id=contract_id,
+            is_sac=False,
+        )
+        self.created_new_assets = True
+
+        return self._cache_asset(asset_object)
 
     def verify_signers(self, account_info: dict):
         signers = account_info['signers']

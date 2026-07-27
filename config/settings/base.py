@@ -179,6 +179,12 @@ STELLAR_PASSPHRASE = NotImplemented
 HORIZON_URL = NotImplemented
 AQUA_AMM_API_URL = NotImplemented
 
+# Soroban RPC is used to tell a Stellar Asset Contract from a pure soroban token
+# (simulates `name()` on the token contract; nothing is ever submitted).
+SOROBAN_RPC_URL = NotImplemented
+# Simulation source account; only its public key is used to build the envelope.
+SOROBAN_SIMULATION_SOURCE = NotImplemented
+
 
 # Market key configuration
 # --------------------------------------------------------------------------

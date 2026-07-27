@@ -90,6 +90,12 @@ STELLAR_PASSPHRASE = env('STELLAR_PASSPHRASE', default='Public Global Stellar Ne
 HORIZON_URL = env('HORIZON_URL', default='https://horizon.stellar.org')
 AQUA_AMM_API_URL = env('AQUA_AMM_API_URL', default='https://amm-api.aqua.network')
 
+SOROBAN_RPC_URL = env('SOROBAN_RPC_URL', default='https://mainnet.sorobanrpc.com')
+SOROBAN_SIMULATION_SOURCE = env(
+    'SOROBAN_SIMULATION_SOURCE',
+    default='GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA',
+)
+
 
 # Market key configuration
 # --------------------------------------------------------------------------

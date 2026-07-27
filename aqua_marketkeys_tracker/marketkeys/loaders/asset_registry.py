@@ -2,8 +2,9 @@ import json
 import logging
 from urllib.parse import urlparse
 
-import requests
 from django.conf import settings
+
+import requests
 from stellar_sdk import StrKey
 
 from aqua_marketkeys_tracker.marketkeys.models import Asset
