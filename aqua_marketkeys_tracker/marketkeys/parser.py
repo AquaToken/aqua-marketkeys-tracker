@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 
 from dateutil.parser import parse as date_parse
@@ -16,6 +18,13 @@ from aqua_marketkeys_tracker.utils.stellar.soroban import (
 
 
 TOKEN_DATA_ENTRY_KEYS = ('token_1', 'token_2')
+# Matches every `token_<n>` data entry, including the ones a pair cannot have, so
+# that they are rejected instead of ignored.
+TOKEN_DATA_ENTRY_KEY_RE = re.compile(r'^token_\d+$')
+
+# The only balance types a market key account may hold besides `native`. They are
+# also the only ones carrying `asset_code` / `asset_issuer`.
+CLASSIC_TRUSTLINE_TYPES = ('credit_alphanum4', 'credit_alphanum12')
 
 
 # Deprecated
@@ -193,10 +202,17 @@ class MarketKeyParser:
         """Extract soroban token contract ids from token_1/token_2 manageData entries."""
         data = account_info.get('data') or {}
 
+        # A pair has at most two tokens, so `token_3` and up are not "extra data" to
+        # skip over — they are an attempt to declare a token that would be silently
+        # dropped, leaving the account parsed as a pair it does not describe.
+        # Numbering must also start at token_1: accepting a lone `token_2` would give
+        # the same market two different on-chain representations.
+        declared = sorted(key for key in data if TOKEN_DATA_ENTRY_KEY_RE.match(key))
+        if declared != list(TOKEN_DATA_ENTRY_KEYS[:len(declared)]):
+            raise MarketKeyParsingError(f'Unexpected token data entries: {declared}.')
+
         contract_ids = []
-        for key in TOKEN_DATA_ENTRY_KEYS:
-            if key not in data:
-                continue
+        for key in declared:
             try:
                 contract_ids.append(decode_data_entry_contract(data[key]))
             except ContractDecodeError as exc:
@@ -208,11 +224,23 @@ class MarketKeyParser:
         return contract_ids
 
     def parse_market_assets(self, account_info: dict) -> (Asset, Asset):
-        trustline_assets = [
-            StellarAsset(b['asset_code'], b['asset_issuer'])
-            for b in account_info['balances']
-            if b['asset_type'] != 'native'
-        ]
+        # A market key account must carry nothing besides XLM and the trustlines of
+        # its own pair. Any other balance type — `liquidity_pool_shares` today,
+        # whatever Horizon adds later — means this is not a well-formed market key,
+        # so the account is rejected rather than parsed on a best-effort basis.
+        # Selecting types explicitly also keeps `asset_code` lookups safe: pool
+        # shares carry no asset code, and reading it raised an unhandled KeyError.
+        trustline_assets = []
+        for balance in account_info['balances']:
+            asset_type = balance['asset_type']
+            if asset_type == 'native':
+                continue
+
+            if asset_type not in CLASSIC_TRUSTLINE_TYPES:
+                raise MarketKeyParsingError(f'Unexpected balance type: {asset_type}.')
+
+            trustline_assets.append(StellarAsset(balance['asset_code'], balance['asset_issuer']))
+
         token_contracts = self.parse_token_contracts(account_info)
 
         if len(trustline_assets) + len(token_contracts) not in (1, 2):

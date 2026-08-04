@@ -5,6 +5,7 @@ from django.conf import settings
 from django.test import TestCase
 
 from stellar_sdk import Asset as StellarAsset
+from stellar_sdk import StrKey
 
 from aqua_marketkeys_tracker.marketkeys.exceptions import MarketKeyParsingError
 from aqua_marketkeys_tracker.marketkeys.models import Asset
@@ -21,6 +22,10 @@ CLASSIC_ISSUER = 'GAHPYWLK6YRN7CVYZOO4H3VDRZ7PVF5UJGLZCSPAEIKJE2XSWF5LAGER'
 
 # A real pure-soroban token contract (testnet "Soroban Custom Token 18 Cheap").
 SOROBAN_CONTRACT = 'CC4I7OKC2T37HAGOOBRQ3JGSWNZC32BZFWGFJMYEDUO3U3SZPPUHPEHZ'
+# A second, synthetic-but-valid contract id: `decode_data_entry_contract` checks the
+# strkey checksum, so a hand-written string would be rejected before the test runs.
+SOROBAN_CONTRACT_2 = StrKey.encode_contract(bytes.fromhex('5d' * 32))
+SOROBAN_CONTRACT_3 = StrKey.encode_contract(bytes.fromhex('7a' * 32))
 
 
 def classic_asset() -> StellarAsset:
@@ -67,6 +72,156 @@ def classic_market(account_id: str, asset: StellarAsset) -> dict:
             {'asset_type': 'credit_alphanum4', 'asset_code': asset.code, 'asset_issuer': asset.issuer},
         ],
     )
+
+
+class BalanceTypesTestCase(TestCase):
+    """A market key account may hold nothing besides XLM and its own trustlines."""
+
+    def setUp(self):
+        self.parser = MarketKeyParser(MARKER_KEY, NotImplemented)
+
+    def test_liquidity_pool_shares_balance_rejects_the_account(self):
+        """Regression: a `liquidity_pool_shares` balance has no `asset_code`.
+
+        Selecting trustlines as `asset_type != 'native'` raised an unhandled
+        `KeyError: 'asset_code'` out of `parse_market_key`, which catches only
+        `MarketKeyParsingError` / `IntegrityError`. That aborted the whole
+        `load_market_keys` walk — `bulk_create` never ran, accounts after the
+        offending one were never looked at, and no new market key of any kind
+        could be discovered until the account disappeared from Horizon.
+
+        The account itself is not a well-formed market key, so it must be
+        rejected — cleanly, one account at a time.
+        """
+        payload = account_info(
+            MARKET_KEY_1,
+            balances=[
+                {'asset_type': 'native'},
+                {
+                    'asset_type': 'credit_alphanum4',
+                    'asset_code': CLASSIC_CODE,
+                    'asset_issuer': CLASSIC_ISSUER,
+                },
+                {'asset_type': 'liquidity_pool_shares', 'liquidity_pool_id': 'a' * 64},
+            ],
+        )
+
+        with self.assertRaises(MarketKeyParsingError):
+            self.parser.parse_account_info(payload)
+
+    def test_unknown_balance_type_rejects_the_account(self):
+        """Whatever Horizon adds next is rejected too, not parsed best-effort."""
+        payload = account_info(
+            MARKET_KEY_1,
+            balances=[
+                {'asset_type': 'native'},
+                {'asset_type': 'credit_alphanum4', 'asset_code': CLASSIC_CODE, 'asset_issuer': CLASSIC_ISSUER},
+                {'asset_type': 'some_future_asset_type'},
+            ],
+        )
+
+        with self.assertRaises(MarketKeyParsingError):
+            self.parser.parse_account_info(payload)
+
+    def test_third_trustline_rejects_the_account(self):
+        """The pair size is bounded by recognised assets, not by the balance count.
+
+        The old `len(balances) not in (2, 3)` guard could not be kept — a soroban
+        pair keeps its tokens in `manageData` and may show a single `native`
+        balance — so this is the check that keeps a third trustline out.
+        """
+        payload = account_info(
+            MARKET_KEY_1,
+            balances=[
+                {'asset_type': 'native'},
+                {'asset_type': 'credit_alphanum4', 'asset_code': 'AQUA', 'asset_issuer': CLASSIC_ISSUER},
+                {'asset_type': 'credit_alphanum4', 'asset_code': 'USDC', 'asset_issuer': CLASSIC_ISSUER},
+                {'asset_type': 'credit_alphanum4', 'asset_code': 'USDT', 'asset_issuer': CLASSIC_ISSUER},
+            ],
+        )
+
+        with self.assertRaises(MarketKeyParsingError):
+            self.parser.parse_account_info(payload)
+
+    def test_two_trustlines_are_a_valid_pair(self):
+        """The happy path stays untouched: XLM plus exactly the pair's trustlines."""
+        payload = account_info(
+            MARKET_KEY_1,
+            balances=[
+                {'asset_type': 'native'},
+                {'asset_type': 'credit_alphanum4', 'asset_code': 'AQUA', 'asset_issuer': CLASSIC_ISSUER},
+                {'asset_type': 'credit_alphanum12', 'asset_code': 'USDCoin', 'asset_issuer': CLASSIC_ISSUER},
+            ],
+        )
+
+        market_key = self.parser.parse_account_info(payload)
+
+        pair = {market_key.asset1.get_asset_string(), market_key.asset2.get_asset_string()}
+        self.assertEqual(pair, {f'AQUA:{CLASSIC_ISSUER}', f'USDCoin:{CLASSIC_ISSUER}'})
+
+    def test_native_only_balances_are_valid_for_a_soroban_pair(self):
+        """A soroban pair has no trustlines at all — only the token data entries."""
+        with patch(
+            'aqua_marketkeys_tracker.marketkeys.parser.resolve_classic_asset',
+            return_value=None,
+        ):
+            market_key = self.parser.parse_account_info(soroban_market(MARKET_KEY_1, SOROBAN_CONTRACT))
+
+        pair = {market_key.asset1.get_asset_string(), market_key.asset2.get_asset_string()}
+        self.assertEqual(pair, {'native', SOROBAN_CONTRACT})
+
+
+class TokenDataEntriesTestCase(TestCase):
+    """A pair has at most two tokens, declared as token_1 then token_2."""
+
+    def setUp(self):
+        self.parser = MarketKeyParser(MARKER_KEY, NotImplemented)
+        # Every contract here is a pure soroban token. Resolution is stubbed so that
+        # these tests fail only on data-entry validation — an unstubbed lookup hits
+        # the network and turns any assertion green via TokenResolveError.
+        patcher = patch(
+            'aqua_marketkeys_tracker.marketkeys.parser.resolve_classic_asset',
+            return_value=None,
+        )
+        self.resolve_mock = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _market(self, **entries) -> dict:
+        return account_info(MARKET_KEY_1, data=entries)
+
+    def test_third_token_entry_rejects_the_account(self):
+        """Reading only token_1/token_2 would silently drop the third token."""
+        payload = self._market(
+            token_1=SOROBAN_CONTRACT,
+            token_2=SOROBAN_CONTRACT_2,
+            token_3=SOROBAN_CONTRACT_3,
+        )
+
+        with self.assertRaises(MarketKeyParsingError):
+            self.parser.parse_account_info(payload)
+
+    def test_token_numbering_must_start_at_one(self):
+        """A lone token_2 would give the same market a second representation."""
+        with self.assertRaises(MarketKeyParsingError):
+            self.parser.parse_account_info(self._market(token_2=SOROBAN_CONTRACT))
+
+    def test_non_sequential_numbering_rejects_the_account(self):
+        with self.assertRaises(MarketKeyParsingError):
+            self.parser.parse_account_info(self._market(token_1=SOROBAN_CONTRACT, token_10=SOROBAN_CONTRACT_2))
+
+    def test_two_token_entries_are_a_valid_soroban_pair(self):
+        market_key = self.parser.parse_account_info(
+            self._market(token_1=SOROBAN_CONTRACT, token_2=SOROBAN_CONTRACT_2),
+        )
+
+        pair = {market_key.asset1.get_asset_string(), market_key.asset2.get_asset_string()}
+        self.assertEqual(pair, {SOROBAN_CONTRACT, SOROBAN_CONTRACT_2})
+
+    def test_single_token_entry_pairs_with_xlm(self):
+        market_key = self.parser.parse_account_info(self._market(token_1=SOROBAN_CONTRACT))
+
+        pair = {market_key.asset1.get_asset_string(), market_key.asset2.get_asset_string()}
+        self.assertEqual(pair, {'native', SOROBAN_CONTRACT})
 
 
 class SacInTokenDataEntryTestCase(TestCase):
