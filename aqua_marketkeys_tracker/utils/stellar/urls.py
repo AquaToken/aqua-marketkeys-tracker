@@ -1,19 +1,17 @@
-from stellar_sdk import Asset
-from stellar_sdk.exceptions import AssetIssuerInvalidError
-
-from aqua_marketkeys_tracker.utils.stellar.asset import get_asset_string, parse_asset_string
-
-
 class AssetStringConverter:
+    """Matches 'native', classic 'CODE:ISSUER' or a soroban contract id 'C...'.
+
+    Returns the raw string: views resolve it into a contract id via
+    `get_contract_id_for_asset_param`.
+    """
+
     code_regex = '[a-zA-Z0-9]{1,12}'
     issuer_regex = 'G[a-zA-Z0-9]{55}'
-    regex = f'(native)|({code_regex}:{issuer_regex})'
+    contract_regex = 'C[A-Z2-7]{55}'
+    regex = f'(native)|({contract_regex})|({code_regex}:{issuer_regex})'
 
-    def to_python(self, value: str) -> Asset:
-        try:
-            return parse_asset_string(value)
-        except AssetIssuerInvalidError as e:
-            raise ValueError('Invalid asset.') from e
+    def to_python(self, value: str) -> str:
+        return value
 
-    def to_url(self, asset: Asset) -> str:
-        return get_asset_string(asset)
+    def to_url(self, value) -> str:
+        return str(value)

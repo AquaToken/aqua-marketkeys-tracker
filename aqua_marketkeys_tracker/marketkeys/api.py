@@ -7,14 +7,11 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import AllowAny
 
-from stellar_sdk import Asset
-
 from aqua_marketkeys_tracker.marketkeys.models import MarketKey
 from aqua_marketkeys_tracker.marketkeys.pagination import MarketKeyPagination
-from aqua_marketkeys_tracker.marketkeys.pair import MarketPair
 from aqua_marketkeys_tracker.marketkeys.serializers import MarketKeySerializer
 from aqua_marketkeys_tracker.utils.drf.filters import MultiGetFilterBackend
-from aqua_marketkeys_tracker.utils.stellar.urls import AssetStringConverter
+from aqua_marketkeys_tracker.utils.stellar.asset import get_contract_id_for_asset_param
 
 
 class BaseMarketKeyView(GenericAPIView):
@@ -26,15 +23,18 @@ class BaseMarketKeyView(GenericAPIView):
 
 class RetrieveMarketKeyView(RetrieveModelMixin, BaseMarketKeyView):
     def get_object(self):
-        asset1 = self.kwargs['asset1']
-        asset2 = self.kwargs['asset2']
-
         try:
-            market_pair = MarketPair(asset1, asset2)
+            contract_id1 = get_contract_id_for_asset_param(self.kwargs['asset1'])
+            contract_id2 = get_contract_id_for_asset_param(self.kwargs['asset2'])
         except ValueError as exc:
             raise Http404(str(exc))
 
-        obj = get_object_or_404(self.filter_queryset(self.get_queryset()).filter_for_market_pair(market_pair))
+        if contract_id1 == contract_id2:
+            raise Http404('Assets in pair must be different.')
+
+        obj = get_object_or_404(
+            self.filter_queryset(self.get_queryset()).filter_for_contract_pair(contract_id1, contract_id2),
+        )
 
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
@@ -49,20 +49,20 @@ class RetrieveMarketKeyView(RetrieveModelMixin, BaseMarketKeyView):
 class SearchMarketKeyView(ListModelMixin, BaseMarketKeyView):
     SEARCH_PARAM_NAME = 'asset'
 
-    def get_search_param(self) -> Optional[Asset]:
+    def get_search_param(self) -> Optional[str]:
         try:
-            return AssetStringConverter().to_python(self.request.query_params.get(self.SEARCH_PARAM_NAME, ''))
+            return get_contract_id_for_asset_param(self.request.query_params.get(self.SEARCH_PARAM_NAME, ''))
         except ValueError:
             return None
 
     def get_queryset(self):
-        search_asset = self.get_search_param()
+        search_contract_id = self.get_search_param()
         queryset = super(SearchMarketKeyView, self).get_queryset()
 
-        if not search_asset:
+        if not search_contract_id:
             return queryset.none()
 
-        return queryset.filter_for_asset(search_asset)
+        return queryset.filter_for_contract(search_contract_id)
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -70,7 +70,7 @@ class SearchMarketKeyView(ListModelMixin, BaseMarketKeyView):
 
 class ListMarketKeyView(ListModelMixin, BaseMarketKeyView):
     filter_backends = [MultiGetFilterBackend]
-    multiget_filter_fields = ['account_id', 'downvote_account_id']
+    multiget_filter_fields = ['account_id']
 
     def get_queryset(self):
         queryset = super(ListMarketKeyView, self).get_queryset()

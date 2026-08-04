@@ -18,6 +18,12 @@ def task_update_market_keys():
     loader = MarketKeyLoader(marker_key, parser)
     loader.load_market_keys()
 
+    if parser.created_new_assets:
+        # Newly discovered assets have in_asset_registry=False until the
+        # registry sync runs (scheduled daily). Trigger it right away so
+        # whitelisted assets don't spend up to a day flagged as unlisted.
+        task_sync_asset_registry.delay()
+
 
 @celery_app.task(ignore_result=True)
 def task_sync_asset_registry():

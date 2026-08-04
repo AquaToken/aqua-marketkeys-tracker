@@ -72,6 +72,12 @@ STELLAR_PASSPHRASE = 'Test SDF Network ; September 2015'
 HORIZON_URL = 'https://horizon-testnet.stellar.org'
 AQUA_AMM_API_URL = 'https://amm-api-testnet.aqua.network'
 
+SOROBAN_RPC_URL = env('SOROBAN_RPC_URL', default='https://soroban-testnet.stellar.org')
+SOROBAN_SIMULATION_SOURCE = env(
+    'SOROBAN_SIMULATION_SOURCE',
+    default='GAHPYWLK6YRN7CVYZOO4H3VDRZ7PVF5UJGLZCSPAEIKJE2XSWF5LAGER',
+)
+
 # Market key configuration
 # --------------------------------------------------------------------------
 
